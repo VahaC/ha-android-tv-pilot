@@ -1,0 +1,199 @@
+// Pure helpers with no DOM or Lit dependencies, so they can be unit-tested in Node.
+import type { TvApp } from "./types";
+
+export type Direction = "UP" | "DOWN" | "LEFT" | "RIGHT";
+
+export interface WakeProgress {
+  /** Seconds since the wake started (never negative). */
+  elapsed: number;
+  /** Seconds until the server-side timeout (never negative). */
+  remaining: number;
+  /** 0..1, clamped. */
+  fraction: number;
+  /** True once the timeout has passed but the server has not reported a result yet. */
+  overdue: boolean;
+}
+
+/**
+ * Progress of a BLE wake, derived from the integration's `wake_started_at` and `wake_timeout`.
+ * A missing or unparsable start time yields zero progress instead of throwing.
+ */
+export function wakeProgress(
+  startedAt: string | null | undefined,
+  timeoutSeconds: number | null | undefined,
+  nowMs: number,
+): WakeProgress {
+  const timeout = timeoutSeconds && timeoutSeconds > 0 ? timeoutSeconds : 30;
+  const start = startedAt ? Date.parse(startedAt) : NaN;
+  if (Number.isNaN(start)) {
+    return { elapsed: 0, remaining: timeout, fraction: 0, overdue: false };
+  }
+  const elapsed = Math.max(0, (nowMs - start) / 1000);
+  const fraction = Math.min(1, elapsed / timeout);
+  return {
+    elapsed,
+    remaining: Math.max(0, timeout - elapsed),
+    fraction,
+    overdue: elapsed > timeout,
+  };
+}
+
+/**
+ * Turns a pointer movement into a D-pad direction. Returns null while the movement is shorter
+ * than `threshold` px, or when it is too diagonal to call (the dominant axis must be at least
+ * `ratio` times the other one).
+ */
+export function detectSwipe(dx: number, dy: number, threshold = 28, ratio = 1.2): Direction | null {
+  const ax = Math.abs(dx);
+  const ay = Math.abs(dy);
+  if (Math.max(ax, ay) < threshold) return null;
+  if (ax >= ay * ratio) return dx > 0 ? "RIGHT" : "LEFT";
+  if (ay >= ax * ratio) return dy > 0 ? "DOWN" : "UP";
+  return null;
+}
+
+/**
+ * Fills a deep-link template. `{query}` is URL-encoded (for search parameters); `{raw}` is
+ * inserted as-is after trimming (for a pasted URL). Unknown placeholders are left untouched.
+ */
+export function fillTemplate(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (match, name: string) => {
+    if (!(name in vars)) return match;
+    const value = vars[name].trim();
+    return name === "raw" ? value : encodeURIComponent(value);
+  });
+}
+
+/** Adds https:// to something that looks like a bare host ("youtube.com/watch?v=x"). */
+export function normalizeUrl(input: string): string | null {
+  const value = input.trim();
+  if (!value) return null;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return value;
+  if (/^[\w-]+(\.[\w-]+)+(:\d+)?(\/|$|\?)/.test(value)) return `https://${value}`;
+  return null;
+}
+
+const globCache = new Map<string, RegExp>();
+
+function globToRegExp(pattern: string): RegExp {
+  let re = globCache.get(pattern);
+  if (!re) {
+    const body = pattern.split("*").map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join(".*");
+    re = new RegExp(`^${body}$`);
+    globCache.set(pattern, re);
+  }
+  return re;
+}
+
+/**
+ * Matches a package against a pattern: an exact name, or a glob where `*` matches any run of
+ * characters anywhere ("org.mozilla.*", "com.xiaomi.*browser*"). Returns a specificity score
+ * (the number of literal characters), or -1. Exact matches always win; among globs the one with
+ * more literal characters wins.
+ */
+export function matchScore(pattern: string, pkg: string): number {
+  if (pattern === pkg) return 10_000;
+  if (!pattern.includes("*")) return -1;
+  return globToRegExp(pattern).test(pkg) ? pattern.replace(/\*/g, "").length : -1;
+}
+
+export interface Matchable {
+  id: string;
+  match: string[];
+}
+
+/** Picks the most specific entry for `pkg`, or the fallback when nothing matches. */
+export function pickBest<T extends Matchable>(entries: T[], pkg: string | null | undefined, fallback: T): T {
+  if (!pkg) return fallback;
+  let best: T | null = null;
+  let bestScore = -1;
+  for (const entry of entries) {
+    for (const pattern of entry.match) {
+      const score = matchScore(pattern, pkg);
+      if (score > bestScore) {
+        best = entry;
+        bestScore = score;
+      }
+    }
+  }
+  return best ?? fallback;
+}
+
+/**
+ * Applies pinned order and the hidden lists to the integration's app list. `system` is only
+ * informational: the integration marks preinstalled YouTube / Netflix / Play Store as system apps,
+ * so it must not hide anything. Hidden = the app's own `hidden` flag (overridden by pinning it) or
+ * the card's `hidden_apps` (always wins).
+ */
+export function arrangeApps(apps: TvApp[], pinned: string[] = [], hidden: string[] = []): TvApp[] {
+  const hiddenSet = new Set(hidden);
+  const visible = apps.filter(
+    (app) => !hiddenSet.has(app.package) && (!app.hidden || pinned.includes(app.package)),
+  );
+  const byPackage = new Map(visible.map((app) => [app.package, app]));
+  const first = pinned.map((pkg) => byPackage.get(pkg)).filter((app): app is TvApp => !!app);
+  const firstSet = new Set(first.map((app) => app.package));
+  const rest = visible
+    .filter((app) => !firstSet.has(app.package))
+    .sort((a, b) => a.label.localeCompare(b.label));
+  return [...first, ...rest];
+}
+
+/** Up to two initials for a tile without an icon ("Prime Video" -> "PV", "kodi" -> "KO"). */
+export function initials(label: string): string {
+  const words = label.trim().split(/[\s._-]+/).filter(Boolean);
+  if (words.length === 0) return "?";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
+/** Parses #rgb / #rrggbb. Returns null for anything else. */
+export function parseHex(color: string | null | undefined): [number, number, number] | null {
+  if (!color) return null;
+  const m = color.trim().match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (!m) return null;
+  let hex = m[1];
+  if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("");
+  const n = parseInt(hex, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/** WCAG relative luminance of an sRGB colour. */
+export function luminance([r, g, b]: [number, number, number]): number {
+  const lin = (v: number) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+/** Black or white, whichever reads better on the given brand colour. */
+export function onColor(color: string | null | undefined): string {
+  const rgb = parseHex(color);
+  if (!rgb) return "#fff";
+  return luminance(rgb) > 0.45 ? "#111" : "#fff";
+}
+
+/**
+ * Brand colours are used as the card's accent. Near-black or near-white brands (Netflix black
+ * logo tiles, white browser icons) would vanish on one of the HA themes, so they are swapped for
+ * the fallback accent.
+ */
+export function usableAccent(color: string | null | undefined, fallback: string): string {
+  const rgb = parseHex(color);
+  if (!rgb) return fallback;
+  const l = luminance(rgb);
+  if (l < 0.02 || l > 0.85) return fallback;
+  return color!.startsWith("#") ? color! : `#${color}`;
+}
+
+/** Formats a 0..1 volume level as a whole percentage, or null when unknown. */
+export function volumePercent(level: number | null | undefined): number | null {
+  if (typeof level !== "number" || Number.isNaN(level)) return null;
+  return Math.round(Math.min(1, Math.max(0, level)) * 100);
+}
+
+/** True when every character can be typed over ADB `input text` (printable ASCII). */
+export function isAdbTypable(text: string): boolean {
+  return /^[\x20-\x7e]*$/.test(text);
+}

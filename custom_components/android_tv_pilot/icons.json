@@ -1,0 +1,22 @@
+{
+  "services": {
+    "send_key": {
+      "service": "mdi:remote"
+    },
+    "send_text": {
+      "service": "mdi:keyboard"
+    },
+    "launch_app": {
+      "service": "mdi:apps"
+    },
+    "open_url": {
+      "service": "mdi:link-variant"
+    },
+    "adb_command": {
+      "service": "mdi:console"
+    },
+    "refresh_apps": {
+      "service": "mdi:refresh"
+    }
+  }
+}

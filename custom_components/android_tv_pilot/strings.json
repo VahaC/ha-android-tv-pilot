@@ -1,0 +1,252 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to the TV over ADB",
+        "description": "The TV must be awake (screen on) during setup. Enable Developer options and USB/network debugging on the TV first. After you press Submit, the TV shows \"Allow USB debugging?\": tick \"Always allow from this computer\" and press OK within 30 seconds.",
+        "data": {
+          "host": "Host",
+          "name": "Name",
+          "adb_port": "ADB port"
+        },
+        "data_description": {
+          "host": "IP address or host name of the TV. Give it a fixed address in your router.",
+          "adb_port": "Network debugging port, 5555 on almost every TV."
+        }
+      },
+      "pair": {
+        "title": "Pair the remote protocol",
+        "description": "The TV ({host}) now shows a 6-character code. Type it below for instant key presses and live state. If no code appears, or the remote protocol is unreachable, tick \"Skip\" to continue with ADB only.",
+        "data": {
+          "pin": "Code shown on the TV",
+          "skip_remote": "Skip, use ADB only"
+        }
+      },
+      "reauth_pair": {
+        "title": "Pair the remote protocol again",
+        "description": "The TV ({host}) now shows a 6-character code. Type it below, or tick \"Skip\" to continue with ADB only.",
+        "data": {
+          "pin": "Code shown on the TV",
+          "skip_remote": "Skip, use ADB only"
+        }
+      },
+      "wake": {
+        "title": "Wake from deep standby",
+        "description": "Optional: the entity that turns the TV on from deep standby, when the TV is no longer on the network. Usually an ESP32 that sends the Bluetooth wake signal (how to build it: [guide]({guide_url}), [firmware]({firmware_url})); a switch, script or scene for another wake method works too. Without it, the TV can only be turned on while it is still reachable.",
+        "data": {
+          "wake_button": "Wake entity",
+          "wake_timeout": "Wake timeout",
+          "repress_interval": "Trigger the wake entity again every"
+        },
+        "data_description": {
+          "wake_timeout": "How long to wait for the TV to come online before reporting a failure.",
+          "repress_interval": "The wake entity is triggered again at this interval until the TV answers."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate with the TV",
+        "description": "The TV ({host}) no longer accepts the stored credentials. Turn the TV on, press Submit and accept \"Allow USB debugging?\" on the TV (tick \"Always allow from this computer\")."
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot reach the TV over ADB. Check that the TV is on, the address is right, and network debugging (ADB) is enabled in Developer options.",
+      "adb_auth_timeout": "The TV did not allow the connection in time. On the TV, accept \"Allow USB debugging?\", tick \"Always allow from this computer\", then press Submit again. If no prompt appears and this keeps failing, revoke USB debugging authorisations in Developer options on the TV and try again.",
+      "no_unique_id": "The TV reported neither a serial number nor a MAC address, so it cannot be identified.",
+      "remote_unreachable": "The remote protocol (ports 6466/6467) is unreachable. Make sure the \"Android TV Remote Service\" is installed and enabled on the TV, or tick \"Skip\" to use ADB only.",
+      "invalid_pin": "Wrong code. A new code is now shown on the TV.",
+      "pairing_closed": "Pairing was cancelled on the TV. A new code is now shown on the TV.",
+      "unknown": "Unexpected error, see the log."
+    },
+    "abort": {
+      "already_configured": "This TV is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Android TV Pilot options",
+        "menu_options": {
+          "settings": "Wake, volume and polling",
+          "app_override": "Customise an app"
+        }
+      },
+      "settings": {
+        "title": "Wake, volume and polling",
+        "description": "The wake entity turns the TV on from deep standby, usually an ESP32 sending the Bluetooth wake signal (how to build it: [guide]({guide_url}), [firmware]({firmware_url})). A button, switch, script or scene for another wake method works too.",
+        "data": {
+          "wake_button": "Wake entity",
+          "wake_timeout": "Wake timeout",
+          "repress_interval": "Trigger the wake entity again every",
+          "volume_entity": "External volume entity",
+          "poll_interval": "State poll interval",
+          "exclude_system_apps": "Hide system apps"
+        },
+        "data_description": {
+          "volume_entity": "Optional media player (for example a soundbar). When set, volume up/down/mute/set are sent to it instead of the TV.",
+          "poll_interval": "How often the TV is polled over ADB while it is online.",
+          "exclude_system_apps": "Hide preinstalled system packages that are not in the built-in app catalogue."
+        }
+      },
+      "app_override": {
+        "title": "Customise an app",
+        "data": {
+          "package": "App"
+        }
+      },
+      "app_override_edit": {
+        "title": "Customise {package}",
+        "description": "Leave everything empty and choose \"Automatic\" to remove the customisation.",
+        "data": {
+          "label": "Label",
+          "icon_url": "Icon URL",
+          "hidden": "Visibility"
+        }
+      }
+    }
+  },
+  "selector": {
+    "hidden_mode": {
+      "options": {
+        "auto": "Automatic",
+        "show": "Always show",
+        "hide": "Hide"
+      }
+    },
+    "key_action": {
+      "options": {
+        "press": "Press",
+        "long": "Long press",
+        "down": "Hold (key down)",
+        "up": "Release (key up)"
+      }
+    }
+  },
+  "exceptions": {
+    "tv_unreachable": {
+      "message": "The TV is not reachable. Turn it on first."
+    },
+    "no_wake_button": {
+      "message": "The TV is unreachable (probably in deep standby) and no wake entity is configured. Add one in the integration options."
+    },
+    "wake_timeout": {
+      "message": "The TV did not come online within {timeout} seconds after triggering the wake entity. Check the wake device and the TV's network connection."
+    },
+    "unknown_key": {
+      "message": "Unknown key \"{key}\". Use a key from the documented vocabulary, a KEYCODE_* name or a number."
+    },
+    "non_ascii_text": {
+      "message": "This text contains characters that ADB cannot type (only plain ASCII works over ADB). Pair the remote protocol to type other characters."
+    },
+    "invalid_package": {
+      "message": "\"{package}\" is not a valid Android package name."
+    },
+    "launch_failed": {
+      "message": "Could not launch {package}: the TV found no launchable activity."
+    },
+    "invalid_url": {
+      "message": "\"{url}\" is not a URL."
+    },
+    "open_url_failed": {
+      "message": "The TV could not open {url}."
+    },
+    "adb_required": {
+      "message": "This needs ADB, which is not connected (only the remote protocol is)."
+    },
+    "screenshot_failed": {
+      "message": "The TV did not return a screenshot."
+    },
+    "unsupported_media_type": {
+      "message": "Unsupported media type \"{media_type}\". Use \"app\" or \"url\"."
+    },
+    "no_target": {
+      "message": "No loaded Android TV Pilot device matches the target."
+    },
+    "single_target": {
+      "message": "Target exactly one TV for this action."
+    },
+    "wake_cancelled": {
+      "message": "Turning on was cancelled because the integration was reloaded or stopped. Try again."
+    },
+    "unknown_app": {
+      "message": "Unknown app \"{app}\". Use a label from the source list or a package name."
+    },
+    "volume_set_failed": {
+      "message": "The TV rejected the volume command."
+    },
+    "volume_max_unknown": {
+      "message": "The TV did not report its volume range, so the volume cannot be set to a level. Use volume up/down instead."
+    },
+    "wake_entity_unavailable": {
+      "message": "The wake entity {entity_id} does not exist or is unavailable. Check it, or choose another one in the integration options."
+    }
+  },
+  "services": {
+    "send_key": {
+      "name": "Send key",
+      "description": "Sends a remote key to the TV (remote protocol first, ADB as fallback).",
+      "fields": {
+        "key": {
+          "name": "Key",
+          "description": "Key from the vocabulary (UP, CENTER, HOME, VOLUME_UP, ...), a KEYCODE_* name or a numeric Android key code."
+        },
+        "action": {
+          "name": "Action",
+          "description": "press, long (long press), down (hold; navigation/volume keys repeat) or up (release)."
+        }
+      }
+    },
+    "send_text": {
+      "name": "Send text",
+      "description": "Types text into the focused field.",
+      "fields": {
+        "text": {
+          "name": "Text",
+          "description": "Text to type."
+        },
+        "enter": {
+          "name": "Press Enter",
+          "description": "Press Enter after typing."
+        }
+      }
+    },
+    "launch_app": {
+      "name": "Launch app",
+      "description": "Starts an app by package name.",
+      "fields": {
+        "package": {
+          "name": "Package",
+          "description": "Android package name, for example com.google.android.youtube.tv."
+        }
+      }
+    },
+    "open_url": {
+      "name": "Open URL",
+      "description": "Opens a URL or deep link on the TV.",
+      "fields": {
+        "url": {
+          "name": "URL",
+          "description": "URL or deep link."
+        },
+        "package": {
+          "name": "Package",
+          "description": "Optional app that should handle the URL."
+        }
+      }
+    },
+    "adb_command": {
+      "name": "ADB command",
+      "description": "Runs a raw shell command on the TV and returns its output. Admin users only. The command is passed as is, without quoting.",
+      "fields": {
+        "command": {
+          "name": "Command",
+          "description": "Shell command."
+        }
+      }
+    },
+    "refresh_apps": {
+      "name": "Refresh apps",
+      "description": "Reads the list of installed apps from the TV again."
+    }
+  }
+}

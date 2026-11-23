@@ -1,0 +1,7 @@
+# Keep LF everywhere: the card bundle is rebuilt in CI and compared byte for byte,
+# and the build output depends on source line endings.
+* text=auto eol=lf
+
+*.png binary
+# Built file: treat as generated in diffs and language stats.
+custom_components/android_tv_pilot/frontend/android-tv-pilot-card.js linguist-generated=true -diff

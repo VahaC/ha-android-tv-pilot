@@ -1,0 +1,89 @@
+send_key:
+  target:
+    entity:
+      integration: android_tv_pilot
+    device:
+      integration: android_tv_pilot
+  fields:
+    key:
+      required: true
+      example: "CENTER"
+      selector:
+        text:
+    action:
+      default: press
+      selector:
+        select:
+          translation_key: key_action
+          options:
+            - press
+            - long
+            - down
+            - up
+
+send_text:
+  target:
+    entity:
+      integration: android_tv_pilot
+    device:
+      integration: android_tv_pilot
+  fields:
+    text:
+      required: true
+      example: "never gonna"
+      selector:
+        text:
+    enter:
+      default: false
+      selector:
+        boolean:
+
+launch_app:
+  target:
+    entity:
+      integration: android_tv_pilot
+    device:
+      integration: android_tv_pilot
+  fields:
+    package:
+      required: true
+      example: "com.google.android.youtube.tv"
+      selector:
+        text:
+
+open_url:
+  target:
+    entity:
+      integration: android_tv_pilot
+    device:
+      integration: android_tv_pilot
+  fields:
+    url:
+      required: true
+      example: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+      selector:
+        text:
+    package:
+      example: "com.google.android.youtube.tv"
+      selector:
+        text:
+
+adb_command:
+  target:
+    entity:
+      integration: android_tv_pilot
+    device:
+      integration: android_tv_pilot
+  fields:
+    command:
+      required: true
+      example: "getprop ro.build.version.release"
+      selector:
+        text:
+
+refresh_apps:
+  target:
+    entity:
+      integration: android_tv_pilot
+    device:
+      integration: android_tv_pilot

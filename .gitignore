@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Node (card)
+node_modules/
+card/dist/
+.npm/
+.vite/
+
+# Local tooling / editors / OS
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Never commit key material
+*adbkey*
+*_remote_cert.pem
+*_remote_key.pem
+
+# The built card bundle IS committed (HACS installs it):
+#   custom_components/android_tv_pilot/frontend/android-tv-pilot-card.js

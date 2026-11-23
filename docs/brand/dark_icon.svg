@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Android TV Pilot mark: a TV whose screen shows a remote D-pad drawn as a compass ring. -->
+  <rect x="0" y="0" width="256" height="200" rx="28" fill="#64B5F6"/>
+  <rect x="16" y="16" width="224" height="168" rx="16" fill="#0D1B2A"/>
+  <rect x="112" y="200" width="32" height="26" fill="#64B5F6"/>
+  <rect x="60" y="222" width="136" height="34" rx="17" fill="#64B5F6"/>
+  <circle cx="128" cy="100" r="60" fill="none" stroke="#FFB300" stroke-width="12"/>
+  <g fill="#FFFFFF">
+    <path d="M128 52 L144 76 L112 76 Z"/>
+    <path d="M128 148 L112 124 L144 124 Z"/>
+    <path d="M80 100 L104 84 L104 116 Z"/>
+    <path d="M176 100 L152 116 L152 84 Z"/>
+  </g>
+  <circle cx="128" cy="100" r="15" fill="#FFB300"/>
+</svg>

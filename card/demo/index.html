@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Android TV Pilot card — demo</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page-bg: #f2f3f5;
+        --panel-bg: #ffffff;
+        --panel-text: #1d1d1f;
+        --panel-muted: #6b6b70;
+        --panel-line: #dcdce0;
+        font-family: Roboto, "Segoe UI", system-ui, sans-serif;
+      }
+      body.dark {
+        color-scheme: dark;
+        --page-bg: #111111;
+        --panel-bg: #1c1c1c;
+        --panel-text: #e1e1e1;
+        --panel-muted: #9b9b9b;
+        --panel-line: #2f2f2f;
+      }
+      /* HA theme variables, light (default theme) */
+      body {
+        --primary-color: #03a9f4;
+        --text-primary-color: #ffffff;
+        --primary-text-color: #212121;
+        --secondary-text-color: #727272;
+        --card-background-color: #ffffff;
+        --ha-card-background: #ffffff;
+        --divider-color: rgba(0, 0, 0, 0.12);
+        --error-color: #db4437;
+        --warning-color: #ffa600;
+        --success-color: #43a047;
+        --ha-card-border-radius: 12px;
+        margin: 0;
+        background: var(--page-bg);
+        color: var(--panel-text);
+      }
+      /* HA theme variables, dark */
+      body.dark {
+        --primary-text-color: #e1e1e1;
+        --secondary-text-color: #9b9b9b;
+        --card-background-color: #1c1c1c;
+        --ha-card-background: #1c1c1c;
+        --divider-color: rgba(225, 225, 225, 0.12);
+      }
+      .page {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        min-height: 100vh;
+      }
+      @media (max-width: 900px) {
+        .page {
+          grid-template-columns: 1fr;
+        }
+      }
+      .stage {
+        padding: 24px 16px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        overflow-x: auto;
+      }
+      .frame {
+        width: var(--frame-w, 390px);
+        max-width: 100%;
+        transition: width 200ms;
+      }
+      .frame-label {
+        font-size: 12px;
+        color: var(--panel-muted);
+        margin-bottom: 8px;
+      }
+      aside {
+        background: var(--panel-bg);
+        border-left: 1px solid var(--panel-line);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        font-size: 13px;
+        max-height: 100vh;
+        position: sticky;
+        top: 0;
+        overflow: auto;
+        box-sizing: border-box;
+      }
+      aside h2 {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--panel-muted);
+        margin: 0 0 6px;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      aside button,
+      aside select {
+        font: inherit;
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--panel-line);
+        background: var(--page-bg);
+        color: var(--panel-text);
+        cursor: pointer;
+      }
+      aside button.on {
+        border-color: #03a9f4;
+        background: color-mix(in srgb, #03a9f4 15%, var(--page-bg));
+      }
+      aside label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      #log {
+        font: 11px/1.5 ui-monospace, Consolas, monospace;
+        background: var(--page-bg);
+        border: 1px solid var(--panel-line);
+        border-radius: 8px;
+        padding: 8px;
+        height: 260px;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      #log .err {
+        color: #db4437;
+      }
+      #log .ws {
+        color: #03a9f4;
+      }
+      #log .svc {
+        color: #43a047;
+      }
+      #log .hap {
+        color: var(--panel-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <main class="stage">
+        <div class="frame" id="frame">
+          <div class="frame-label" id="frame-label"></div>
+          <android-tv-pilot-card id="card"></android-tv-pilot-card>
+        </div>
+      </main>
+      <aside>
+        <section>
+          <h2>Power state</h2>
+          <div class="row" id="states"></div>
+        </section>
+        <section>
+          <h2>Faults and options</h2>
+          <div class="row" style="flex-direction: column; align-items: flex-start">
+            <label><input type="checkbox" id="unreachable" /> Commands fail with tv_unreachable</label>
+            <label><input type="checkbox" id="slowadb" /> Slow ADB (800 ms per key)</label>
+            <label><input type="checkbox" id="wakebtn" checked /> has_wake_button</label>
+            <label><input type="checkbox" id="failnext" /> Next wake fails (10 s timeout)</label>
+            <label><input type="checkbox" id="adb" checked /> adb_connected</label>
+            <label><input type="checkbox" id="remote" checked /> remote_connected</label>
+            <label><input type="checkbox" id="volent" /> Use a volume entity (soundbar)</label>
+            <label>Apps: <select id="appsmode"><option value="ok">normal</option><option value="slow">slow (3 s)</option><option value="empty">empty</option><option value="error">error</option></select></label>
+          </div>
+        </section>
+        <section>
+          <h2>Card config</h2>
+          <div class="row" style="flex-direction: column; align-items: flex-start">
+            <label>layout <select id="layout"><option>a</option><option>b</option><option>c</option></select></label>
+            <label><input type="checkbox" id="shot" /> show_screenshot</label>
+            <label><input type="checkbox" id="proto" checked /> prototype_switch</label>
+            <label><input type="checkbox" id="pinned" /> pinned_apps: Jellyfin, YouTube</label>
+          </div>
+        </section>
+        <section>
+          <h2>Look</h2>
+          <div class="row" id="viewports"></div>
+          <div class="row" style="margin-top: 6px">
+            <button id="theme">Dark theme</button>
+            <button id="lang">Українська</button>
+          </div>
+        </section>
+        <section>
+          <h2>Console</h2>
+          <div id="log" aria-live="off"></div>
+        </section>
+      </aside>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
