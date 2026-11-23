@@ -22,9 +22,10 @@
         --panel-muted: #9b9b9b;
         --panel-line: #2f2f2f;
       }
-      /* HA theme variables, light (default theme) */
+      /* HA theme variables, light (default theme). --primary-color matches the stock HA frontend
+         (color.globals.ts: var(--ha-color-primary-40) = #009ac7, not overridden in dark mode). */
       body {
-        --primary-color: #03a9f4;
+        --primary-color: #009ac7;
         --text-primary-color: #ffffff;
         --primary-text-color: #212121;
         --secondary-text-color: #727272;
@@ -204,6 +205,20 @@
           <div class="row" style="margin-top: 6px">
             <button id="theme">Dark theme</button>
             <button id="lang">Українська</button>
+          </div>
+          <div class="row" style="margin-top: 6px">
+            <label
+              >Primary colour
+              <select id="primary">
+                <option value="">stock HA (#009ac7)</option>
+                <option value="#03a9f4">older HA blue (#03a9f4)</option>
+                <option value="#ff9800">orange (#ff9800)</option>
+                <option value="#4caf50">green (#4caf50)</option>
+                <option value="#9c27b0">purple (#9c27b0)</option>
+                <option value="#ffeb3b">yellow (#ffeb3b)</option>
+                <option value="#1a237e">dark indigo (#1a237e)</option>
+              </select></label
+            >
           </div>
         </section>
         <section>

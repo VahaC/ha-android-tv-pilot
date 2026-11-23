@@ -167,24 +167,56 @@ export function luminance([r, g, b]: [number, number, number]): number {
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
-/** Black or white, whichever reads better on the given brand colour. */
+/** Black or white, whichever reads better on the given brand colour (app tiles). */
 export function onColor(color: string | null | undefined): string {
   const rgb = parseHex(color);
   if (!rgb) return "#fff";
   return luminance(rgb) > 0.45 ? "#111" : "#fff";
 }
 
+type Rgb = [number, number, number];
+
 /**
- * Brand colours are used as the card's accent. Near-black or near-white brands (Netflix black
- * logo tiles, white browser icons) would vanish on one of the HA themes, so they are swapped for
- * the fallback accent.
+ * Parses #rgb, #rgba, #rrggbb, #rrggbbaa, rgb()/rgba() (comma or space syntax). Alpha is ignored.
+ * Returns null for anything else (named colours etc. are resolved by the card via a canvas).
  */
-export function usableAccent(color: string | null | undefined, fallback: string): string {
-  const rgb = parseHex(color);
-  if (!rgb) return fallback;
-  const l = luminance(rgb);
-  if (l < 0.02 || l > 0.85) return fallback;
-  return color!.startsWith("#") ? color! : `#${color}`;
+export function parseCssColor(value: string | null | undefined): Rgb | null {
+  if (!value) return null;
+  const v = value.trim().toLowerCase();
+  const hex = v.match(/^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/);
+  if (hex) {
+    let h = hex[1];
+    if (h.length <= 4) h = h.split("").map((c) => c + c).join("");
+    const n = parseInt(h.slice(0, 6), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  const fn = v.match(/^rgba?\(\s*([\d.]+%?)[\s,]+([\d.]+%?)[\s,]+([\d.]+%?)/);
+  if (fn) {
+    const ch = (s: string) => Math.round(Math.min(255, Math.max(0, s.endsWith("%") ? (parseFloat(s) * 255) / 100 : parseFloat(s))));
+    return [ch(fn[1]), ch(fn[2]), ch(fn[3])];
+  }
+  return null;
+}
+
+/** WCAG contrast ratio between two colours (1..21). */
+export function contrastRatio(a: Rgb, b: Rgb): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/**
+ * Colour for icons and text drawn on the theme's primary colour: the theme's own
+ * --text-primary-color when it reaches 3:1 (WCAG minimum for icons and large/bold text, which is all
+ * the card draws on the accent; HA's own white-on-#009ac7 is 3.3:1), otherwise black or white,
+ * whichever contrasts more.
+ * Returns null when the primary cannot be parsed (CSS fallback applies).
+ */
+export function pickOnAccent(primary: Rgb | null, textPrimary: Rgb | null): string | null {
+  if (!primary) return null;
+  if (textPrimary && contrastRatio(primary, textPrimary) >= 3) {
+    return `rgb(${textPrimary[0]}, ${textPrimary[1]}, ${textPrimary[2]})`;
+  }
+  return contrastRatio(primary, [255, 255, 255]) >= contrastRatio(primary, [17, 17, 17]) ? "#ffffff" : "#111111";
 }
 
 /** Formats a 0..1 volume level as a whole percentage, or null when unknown. */

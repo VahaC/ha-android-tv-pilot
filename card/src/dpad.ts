@@ -221,7 +221,7 @@ export class AtpDpad extends LitElement {
         padding-right: 7%;
       }
       .wedge.pressed {
-        color: var(--atp-accent-base);
+        color: var(--atp-accent-ink);
         background: radial-gradient(circle, transparent 34%, var(--atp-tint) 35%, transparent 92%);
       }
       @media (hover: hover) {
@@ -230,7 +230,7 @@ export class AtpDpad extends LitElement {
         }
       }
       .wedge:focus-visible {
-        color: var(--atp-accent-base);
+        color: var(--atp-accent-ink);
         background: radial-gradient(circle, transparent 34%, var(--atp-tint) 35%, transparent 92%);
       }
       .wedge[disabled] {
@@ -272,7 +272,7 @@ export class AtpDpad extends LitElement {
           inset 0 3px 10px -2px color-mix(in srgb, #000 35%, transparent);
       }
       .center:focus-visible {
-        outline: 3px solid var(--atp-accent-base);
+        outline: 3px solid var(--atp-accent-ink);
         outline-offset: 9px;
       }
       .center[disabled] {

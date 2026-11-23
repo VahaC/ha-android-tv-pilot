@@ -1,13 +1,17 @@
 import { css } from "lit";
 
 /**
- * Design tokens. Surfaces and text come from the HA theme; the accent follows the running app's
- * brand colour (set as --atp-accent on the card) and falls back to the theme's primary colour.
+ * Design tokens. Surfaces and text come from the HA theme, and so does the accent: always the
+ * theme's --primary-color (never an app colour). --atp-on-accent is set by the card from a contrast
+ * check of --text-primary-color against the primary; --atp-accent-ink is the accent nudged towards
+ * the text colour, for accent-coloured icons, text and outlines on card surfaces (keeps a light
+ * primary such as yellow readable on white, and a dark one readable on a dark theme).
  */
 export const tokens = css`
   :host {
-    --atp-accent-base: var(--atp-accent, var(--primary-color, #03a9f4));
+    --atp-accent-base: var(--primary-color, #03a9f4);
     --atp-on-accent-base: var(--atp-on-accent, var(--text-primary-color, #fff));
+    --atp-accent-ink: color-mix(in srgb, var(--atp-accent-base) 72%, var(--atp-text));
     --atp-surface: var(--ha-card-background, var(--card-background-color, #fff));
     --atp-text: var(--primary-text-color, #1c1c1c);
     --atp-muted: var(--secondary-text-color, #6b6b6b);
@@ -72,7 +76,7 @@ export const keycap = css`
   }
   .key:focus-visible,
   .focusable:focus-visible {
-    outline: 2px solid var(--atp-accent-base);
+    outline: 2px solid var(--atp-accent-ink);
     outline-offset: 2px;
   }
   .key[disabled] {

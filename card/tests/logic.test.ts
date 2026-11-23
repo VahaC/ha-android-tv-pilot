@@ -14,7 +14,9 @@ import {
   matchScore,
   normalizeUrl,
   onColor,
-  usableAccent,
+  contrastRatio,
+  parseCssColor,
+  pickOnAccent,
   wakeProgress,
 } from "../src/logic";
 import type { TvApp } from "../src/types";
@@ -180,12 +182,51 @@ describe("apps and colours", () => {
     expect(initials("")).toBe("?");
   });
 
-  it("chooses readable text and drops unusable accents", () => {
+  it("chooses readable text on app brand colours", () => {
     expect(onColor("#ffffff")).toBe("#111");
     expect(onColor("#e50914")).toBe("#fff");
-    expect(usableAccent("#000000", "fb")).toBe("fb");
-    expect(usableAccent("#1db954", "fb")).toBe("#1db954");
-    expect(usableAccent(null, "fb")).toBe("fb");
+  });
+});
+
+describe("theme accent", () => {
+  const WHITE: [number, number, number] = [255, 255, 255];
+
+  it("parses the colour syntaxes HA themes use", () => {
+    expect(parseCssColor("#009ac7")).toEqual([0, 154, 199]);
+    expect(parseCssColor("#fff")).toEqual([255, 255, 255]);
+    expect(parseCssColor("#03a9f4cc")).toEqual([3, 169, 244]);
+    expect(parseCssColor("rgb(255, 152, 0)")).toEqual([255, 152, 0]);
+    expect(parseCssColor("rgba(76 175 80 / 0.5)")).toEqual([76, 175, 80]);
+    expect(parseCssColor("rgb(100%, 0%, 50%)")).toEqual([255, 0, 128]);
+    expect(parseCssColor("var(--x)")).toBeNull();
+    expect(parseCssColor("")).toBeNull();
+  });
+
+  it("keeps the theme text colour on HA's stock primary (white on #009ac7)", () => {
+    expect(pickOnAccent(parseCssColor("#009ac7"), WHITE)).toBe("rgb(255, 255, 255)");
+    // The older default #03a9f4 gives white only 2.6:1, so the card draws dark text on it.
+    expect(pickOnAccent(parseCssColor("#03a9f4"), WHITE)).toBe("#111111");
+  });
+
+  it("switches to dark text on a light primary such as yellow", () => {
+    expect(pickOnAccent(parseCssColor("#ffeb3b"), WHITE)).toBe("#111111");
+    expect(pickOnAccent(parseCssColor("#ffc107"), WHITE)).toBe("#111111");
+  });
+
+  it("uses white on a dark primary even if the theme text colour is dark", () => {
+    expect(pickOnAccent(parseCssColor("#1a237e"), [33, 33, 33])).toBe("#ffffff");
+  });
+
+  it("always reaches at least 3:1 for any primary", () => {
+    for (const hex of ["#009ac7", "#ff9800", "#4caf50", "#9c27b0", "#ffeb3b", "#1a237e", "#e91e63", "#00bcd4"]) {
+      const p = parseCssColor(hex)!;
+      const on = parseCssColor(pickOnAccent(p, WHITE)!)!;
+      expect(contrastRatio(p, on), hex).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("falls back to CSS when the primary is unknown", () => {
+    expect(pickOnAccent(null, WHITE)).toBeNull();
   });
 });
 

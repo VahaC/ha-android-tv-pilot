@@ -43,6 +43,20 @@ right after the TV, with a one-line description of the selected layout, and the 
 soon as you pick one. The app pickers list the apps reported by the TV and accept any package name
 typed in by hand.
 
+### Colours
+
+The card's accent (power button, OK, play/pause, volume fill, focus rings, selected states, the
+header glow and the wake progress) always comes from the Home Assistant theme's `--primary-color`
+(fallback `#03a9f4`); tints and shades are mixed from it with `color-mix()`, so any theme colour
+works in light and dark mode. Icons and text on the accent use the theme's `--text-primary-color`
+when it contrasts at least 3:1 with the primary, otherwise black or white, whichever reads better
+(for example dark text on a yellow primary). Accent-coloured icons and outlines on the card surface
+are mixed towards the text colour so a very light or very dark primary stays visible.
+
+App brand colours are only used where they identify the app: the app tiles, the small icon dot in
+the current-app chip and in the in-app panel header. Connection dots and failure states use the
+theme's `--success-color`, `--error-color` and `--warning-color`.
+
 ### Volume
 
 - With a volume entity (from `volume_entity` in the card or in the integration options), the
@@ -55,7 +69,7 @@ typed in by hand.
 
 | `power_state` / `wake_state` | Card |
 | --- | --- |
-| `on` | Everything enabled. The header shows the running app in its brand colour, and the whole card takes that colour as its accent. |
+| `on` | Everything enabled. The header chip names the running app with its icon. |
 | `waking` (or `wake_state: waking`) | Shown the moment you tap power (before the server answers, for up to 10 s), so the button cannot be double-tapped. Power button shows a progress ring; a banner says "Waking up… 12 s" with a progress bar computed from `wake_started_at` and `wake_timeout`. Controls stay visible but are disabled. |
 | `wake_state: failed` and `power_state: off` | Red banner "The TV did not wake up" with a **Retry wake** button (calls `media_player.turn_on` again). |
 | `off`, `has_wake_button: true` | "TV is off" banner with **Turn on**. |
@@ -217,7 +231,9 @@ npm run screenshots
 
 The demo also takes URL parameters for scripted setups: `layout=remote|apps|wide`, `switch=0|1`
 (layout button), `shot=0|1`, `theme=light|dark`, `lang=en|uk`, `state=off|waking|on|asleep|failed`,
-`app=<package>`, `width=<card px>`, `chrome=0` (card only, no control panel) and `bundle`.
+`app=<package>`, `width=<card px>`, `primary=<css colour>` (try another theme primary),
+`chrome=0` (card only, no control panel) and `bundle`. The demo uses the stock HA primary `#009ac7`
+and has a "Primary colour" picker with a few others (orange, green, purple, yellow, dark indigo).
 
 The demo (`card/demo`) runs the card against a mock `hass`: a power state machine
 (off → waking → on after 6–12 s), 17 mock apps, mocked WebSocket commands that log to the on-page

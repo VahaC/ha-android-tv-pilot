@@ -16,7 +16,8 @@ import {
   initials,
   normalizeUrl,
   onColor,
-  usableAccent,
+  parseCssColor,
+  pickOnAccent,
   volumePercent,
   wakeProgress,
 } from "./logic";
@@ -52,6 +53,20 @@ function readStore(key: string): string | null {
   } catch {
     return null;
   }
+}
+
+let colorCanvas: CanvasRenderingContext2D | null | undefined;
+
+/** Parses a theme colour; names and other CSS syntaxes go through a 2D canvas to become hex/rgb. */
+function resolveColor(value: string): [number, number, number] | null {
+  const direct = parseCssColor(value);
+  if (direct) return direct;
+  if (colorCanvas === undefined) colorCanvas = document.createElement("canvas").getContext("2d");
+  if (!colorCanvas) return null;
+  colorCanvas.fillStyle = "#000001";
+  colorCanvas.fillStyle = value;
+  const normal = String(colorCanvas.fillStyle);
+  return normal === "#000001" ? null : parseCssColor(normal);
 }
 
 function writeStore(key: string, value: string | null): void {
@@ -109,6 +124,7 @@ export class AndroidTvPilotCard extends LitElement {
   private volumeLoop: { active: boolean } | null = null;
   private toastId = 0;
   private revealedApp = "";
+  private themeKey = "";
   private observer: IntersectionObserver | null = null;
   private onVisibility = () => {
     if (document.visibilityState !== "visible") this.releaseAllKeys();
@@ -199,11 +215,6 @@ export class AndroidTvPilotCard extends LitElement {
     return id ? this.apps?.find((a) => a.package === id) : undefined;
   }
 
-  private get accent(): string | null {
-    const color = usableAccent(this.runningApp?.color, "");
-    return color || null;
-  }
-
   // ---- lifecycle ------------------------------------------------------------------------
 
   connectedCallback(): void {
@@ -238,7 +249,7 @@ export class AndroidTvPilotCard extends LitElement {
       return (
         ids.some((id) => old.states[id] !== this.hass!.states[id]) ||
         old.locale?.language !== this.hass.locale?.language ||
-        old.themes?.darkMode !== this.hass.themes?.darkMode
+        old.themes !== this.hass.themes
       );
     }
     return true;
@@ -267,16 +278,25 @@ export class AndroidTvPilotCard extends LitElement {
     this.prevPower = power;
   }
 
+  /**
+   * The accent is always the theme's --primary-color (pure CSS). Only the colour drawn on top of it
+   * needs JS: --text-primary-color when it is readable on the primary, otherwise black or white.
+   * Re-checked whenever the resolved theme colours change.
+   */
+  private syncAccentContrast(): void {
+    const cs = getComputedStyle(this);
+    const primary = cs.getPropertyValue("--primary-color").trim() || "#03a9f4";
+    const text = cs.getPropertyValue("--text-primary-color").trim() || "#ffffff";
+    const key = `${primary}|${text}`;
+    if (key === this.themeKey) return;
+    this.themeKey = key;
+    const on = pickOnAccent(resolveColor(primary), resolveColor(text));
+    if (on) this.style.setProperty("--atp-on-accent", on);
+    else this.style.removeProperty("--atp-on-accent");
+  }
+
   protected updated(): void {
-    // The accent lives on the host so that tokens declared on :host resolve against it.
-    const accent = this.accent;
-    if (accent) {
-      this.style.setProperty("--atp-accent", accent);
-      this.style.setProperty("--atp-on-accent", onColor(accent));
-    } else {
-      this.style.removeProperty("--atp-accent");
-      this.style.removeProperty("--atp-on-accent");
-    }
+    this.syncAccentContrast();
     if (this.waking) this.startWakeTicker();
     else this.stopWakeTicker();
     this.revealRunningApp();
@@ -817,7 +837,7 @@ export class AndroidTvPilotCard extends LitElement {
         <div class="name">${name}</div>
         <div class="sub">
           ${power === "on"
-            ? html`<span class="chip" style="--chip:${appColor ?? "var(--atp-accent-base)"};--on-chip:${onColor(appColor)}">
+            ? html`<span class="chip" style=${appColor ? `--brand:${appColor};--on-brand:${onColor(appColor)}` : ""}>
                 <span class="chip-art">${a.app_id ? this.appArt(app, a.app_name || a.app_id) : html`<ha-icon icon="mdi:home"></ha-icon>`}</span>
                 <span class="chip-text">${a.app_name || app?.label || (a.app_id ? a.app_id : t("no_app"))}</span>
               </span>`

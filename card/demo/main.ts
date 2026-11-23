@@ -387,6 +387,13 @@ for (const id of ["unreachable", "wakebtn", "adb", "remote", "volent", "appsmode
     publish();
   });
 }
+function setPrimary(value: string): void {
+  if (value) document.body.style.setProperty("--primary-color", value);
+  else document.body.style.removeProperty("--primary-color");
+  publish();
+}
+$("primary").addEventListener("change", () => setPrimary($<HTMLSelectElement>("primary").value));
+
 for (const id of ["layout", "shot", "layoutswitch", "pinned"]) $(id).addEventListener("change", applyConfig);
 
 window.addEventListener("haptic", (e) => log("hap", `haptic: ${(e as CustomEvent).detail}`));
@@ -394,7 +401,7 @@ window.addEventListener("error", (e) => log("err", `page error: ${e.message}`));
 
 // ---- URL parameters (deterministic setups for scripts/screenshots.mjs) -------------------
 // ?layout=remote|apps|wide  &switch=0|1 (layout button)  &shot=0|1  &theme=light|dark  &lang=en|uk  &width=390
-// &state=off|waking|on|asleep|failed  &app=<package>  &chrome=0 (card only, no control panel)
+// &state=off|waking|on|asleep|failed  &app=<package>  &chrome=0 (card only, no control panel)  &primary=<css colour>
 const params = new URLSearchParams(location.search);
 const setChecked = (id: string, on: boolean) => ($<HTMLInputElement>(id).checked = on);
 if (params.has("layout")) $<HTMLSelectElement>("layout").value = params.get("layout")!;
@@ -403,6 +410,10 @@ if (params.has("shot")) setChecked("shot", params.get("shot") === "1");
 if (params.get("theme") === "dark") $("theme").click();
 if (params.get("lang") === "uk") $("lang").click();
 if (params.get("chrome") === "0") document.body.classList.add("bare");
+if (params.get("primary")) {
+  $<HTMLSelectElement>("primary").value = params.get("primary")!;
+  document.body.style.setProperty("--primary-color", params.get("primary")!);
+}
 
 applyConfig();
 const startState = params.get("state");

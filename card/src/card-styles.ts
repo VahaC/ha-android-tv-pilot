@@ -127,7 +127,7 @@ export const cardStyles = [
       background: var(--atp-well);
     }
     .menu-item:focus-visible {
-      outline: 2px solid var(--atp-accent-base);
+      outline: 2px solid var(--atp-accent-ink);
       outline-offset: -2px;
     }
     .menu-item.on {
@@ -136,7 +136,7 @@ export const cardStyles = [
     .mi-icon {
       flex: none;
       --mdc-icon-size: 22px;
-      color: var(--atp-accent-base);
+      color: var(--atp-accent-ink);
     }
     .mi-text {
       flex: 1;
@@ -157,7 +157,7 @@ export const cardStyles = [
     .mi-check {
       flex: none;
       --mdc-icon-size: 20px;
-      color: var(--atp-accent-base);
+      color: var(--atp-accent-ink);
       visibility: hidden;
     }
     .menu-item.on .mi-check {
@@ -202,7 +202,7 @@ export const cardStyles = [
       box-shadow: 0 1px 0 var(--atp-line), 0 4px 10px -6px var(--atp-key-shadow);
     }
     .seg-btn:focus-visible {
-      outline: 2px solid var(--atp-accent-base);
+      outline: 2px solid var(--atp-accent-ink);
       outline-offset: 1px;
     }
 
@@ -242,11 +242,11 @@ export const cardStyles = [
       max-width: 100%;
       padding: 3px 10px 3px 3px;
       border-radius: 999px;
-      background: color-mix(in srgb, var(--chip) 16%, transparent);
+      background: var(--atp-tint);
       color: var(--atp-text);
       font-weight: 500;
       font-size: 13px;
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chip) 35%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--atp-accent-base) 35%, transparent);
     }
     .chip-art,
     .mini-art {
@@ -257,8 +257,9 @@ export const cardStyles = [
       display: grid;
       place-items: center;
       overflow: hidden;
-      background: var(--chip, var(--brand));
-      color: var(--on-chip, var(--on-brand));
+      /* The only places outside the tiles that show an app's own colour: its icon dot. */
+      background: var(--brand, var(--atp-accent-base));
+      color: var(--on-brand, var(--atp-on-accent-base));
       --mdc-icon-size: 14px;
       font-size: 9px;
       font-weight: 700;
@@ -285,7 +286,7 @@ export const cardStyles = [
       color: var(--atp-muted);
     }
     .state-pill.waking {
-      color: var(--atp-accent-base);
+      color: var(--atp-accent-ink);
       box-shadow: inset 0 0 0 1px var(--atp-glow);
     }
     .state-pill.failed {
@@ -338,7 +339,7 @@ export const cardStyles = [
       transform: scale(0.95);
     }
     .power:focus-visible {
-      outline: 2px solid var(--atp-accent-base);
+      outline: 2px solid var(--atp-accent-ink);
       outline-offset: 3px;
     }
     .power.on {
@@ -347,7 +348,7 @@ export const cardStyles = [
       box-shadow: 0 0 0 4px var(--atp-tint), 0 12px 26px -12px var(--atp-glow);
     }
     .power.waking {
-      color: var(--atp-accent-base);
+      color: var(--atp-accent-ink);
       cursor: progress;
     }
     .power.waking ha-icon {
@@ -738,14 +739,14 @@ export const cardStyles = [
       }
     }
     .tile:focus-visible .art {
-      outline: 2px solid var(--atp-accent-base);
+      outline: 2px solid var(--atp-accent-ink);
       outline-offset: 3px;
     }
     .tile.running .art {
       box-shadow:
         0 0 0 3px var(--atp-surface),
-        0 0 0 5px var(--brand),
-        0 12px 22px -10px var(--brand);
+        0 0 0 5px var(--atp-accent-base),
+        0 12px 22px -10px var(--atp-glow);
     }
     .tile.running .lbl {
       font-weight: 600;
@@ -807,7 +808,7 @@ export const cardStyles = [
       height: 14px;
       border-radius: 50%;
       border: 2px solid var(--atp-line);
-      border-top-color: var(--atp-accent-base);
+      border-top-color: var(--atp-accent-ink);
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin {
@@ -846,7 +847,7 @@ export const cardStyles = [
     }
     .key.act ha-icon {
       flex: none;
-      color: var(--atp-accent-base);
+      color: var(--atp-accent-ink);
     }
     .key.act.pressed ha-icon {
       color: inherit;
@@ -967,7 +968,7 @@ export const cardStyles = [
       transform: translateX(16px);
     }
     .switch input:focus-visible + .track {
-      outline: 2px solid var(--atp-accent-base);
+      outline: 2px solid var(--atp-accent-ink);
       outline-offset: 2px;
     }
     .fold {
@@ -1015,7 +1016,7 @@ export const cardStyles = [
       box-shadow: inset 0 0 0 1px var(--atp-line), 0 10px 24px -16px var(--atp-key-shadow);
     }
     .shot-btn:focus-visible {
-      outline: 2px solid var(--atp-accent-base);
+      outline: 2px solid var(--atp-accent-ink);
       outline-offset: 2px;
     }
     .shot-btn img {
@@ -1111,12 +1112,12 @@ export const cardStyles = [
     }
     .toast-btn {
       padding: 0 12px;
-      color: var(--atp-accent-base);
+      color: var(--atp-accent-ink);
       background: color-mix(in srgb, var(--atp-surface) 12%, transparent);
     }
     .toast-btn:focus-visible,
     .toast-x:focus-visible {
-      outline: 2px solid var(--atp-accent-base);
+      outline: 2px solid var(--atp-accent-ink);
     }
     @keyframes toast-in {
       from {
@@ -1170,7 +1171,7 @@ export const cardStyles = [
       -webkit-tap-highlight-color: transparent;
     }
     .handle:focus-visible {
-      outline: 2px solid var(--atp-accent-base);
+      outline: 2px solid var(--atp-accent-ink);
       outline-offset: -2px;
     }
     .grabber {
@@ -1243,7 +1244,7 @@ export const cardStyles = [
       box-shadow: inset 0 0 0 1px var(--atp-line);
     }
     .tab:focus-visible {
-      outline: 2px solid var(--atp-accent-base);
+      outline: 2px solid var(--atp-accent-ink);
     }
     .sheet .inapp {
       background: transparent;
