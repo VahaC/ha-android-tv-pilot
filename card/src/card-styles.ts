@@ -29,7 +29,7 @@ export const cardStyles = [
       min-height: 100%;
       box-sizing: border-box;
     }
-    .wrap.layout-a {
+    .wrap.layout-remote {
       padding-bottom: 78px;
     }
     h3 {
@@ -56,46 +56,118 @@ export const cardStyles = [
       font-variant-numeric: tabular-nums;
     }
 
-    /* ---- PROTOTYPE (2026-11-23): layout switch ------------------------------------------ */
-    .proto {
+    /* ---- layout button + menu (layout_switch: true) ------------------------------------ */
+    /* The menu is anchored to the whole header (not the button) so it never leaves the card. */
+    .layout-wrap {
+      position: static;
+      flex: none;
+    }
+    .key.layout-btn {
+      width: 44px;
+      height: 44px;
+      color: var(--atp-muted);
+      --mdc-icon-size: 22px;
+    }
+    .key.layout-btn.overridden::after {
+      content: "";
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--atp-accent-base);
+      box-shadow: 0 0 0 2px var(--atp-surface);
+    }
+    .layout-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      z-index: 40;
+      width: min(320px, 100%);
+      box-sizing: border-box;
+      padding: 6px;
+      border-radius: 16px;
+      background: var(--atp-surface);
+      box-shadow:
+        0 0 0 1px var(--atp-line),
+        0 18px 40px -12px color-mix(in srgb, #000 45%, transparent);
+      animation: menu-in 140ms var(--atp-ease);
+    }
+    @keyframes menu-in {
+      from {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.98);
+      }
+    }
+    .menu-title {
+      padding: 8px 10px 6px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--atp-muted);
+    }
+    .menu-item {
+      all: unset;
+      box-sizing: border-box;
+      width: 100%;
+      min-height: 48px;
       display: flex;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 6px 8px;
-      padding: 6px 8px;
-      border: 1px dashed color-mix(in srgb, var(--atp-warning) 60%, transparent);
+      gap: 10px;
+      padding: 8px 10px;
       border-radius: 12px;
-      background: color-mix(in srgb, var(--atp-warning) 7%, transparent);
-      font-size: 12px;
-    }
-    .proto-label {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      color: var(--atp-muted);
-      --mdc-icon-size: 16px;
-    }
-    .proto .seg {
-      flex: 1 1 auto;
-    }
-    .proto-reset {
-      all: unset;
-      gap: 4px;
-      --mdc-icon-size: 16px;
       cursor: pointer;
-      font-size: 12px;
-      color: var(--atp-muted);
-      text-decoration: underline;
-      min-height: 44px;
-      display: inline-flex;
-      align-items: center;
-      padding: 0 4px;
+      color: var(--atp-text);
+      -webkit-tap-highlight-color: transparent;
     }
-    .proto-reset:focus-visible {
+    .menu-item:hover,
+    .menu-item:focus-visible {
+      background: var(--atp-well);
+    }
+    .menu-item:focus-visible {
       outline: 2px solid var(--atp-accent-base);
-      border-radius: 6px;
+      outline-offset: -2px;
     }
-
+    .menu-item.on {
+      background: var(--atp-tint);
+    }
+    .mi-icon {
+      flex: none;
+      --mdc-icon-size: 22px;
+      color: var(--atp-accent-base);
+    }
+    .mi-text {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .mi-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .mi-help {
+      font-size: 12px;
+      line-height: 1.35;
+      color: var(--atp-muted);
+    }
+    .mi-check {
+      flex: none;
+      --mdc-icon-size: 20px;
+      color: var(--atp-accent-base);
+      visibility: hidden;
+    }
+    .menu-item.on .mi-check {
+      visibility: visible;
+    }
+    .menu-sep {
+      height: 1px;
+      margin: 6px 4px;
+      background: var(--atp-line);
+    }
     /* ---- segmented control ------------------------------------------------------------- */
     .seg {
       display: flex;
@@ -136,6 +208,7 @@ export const cardStyles = [
 
     /* ---- header ------------------------------------------------------------------------ */
     .head {
+      position: relative;
       display: flex;
       align-items: center;
       gap: 12px;
@@ -990,7 +1063,7 @@ export const cardStyles = [
       z-index: 20;
       pointer-events: none;
     }
-    .layout-a .toasts {
+    .layout-remote .toasts {
       bottom: 76px;
     }
     .sheet-open .toasts {

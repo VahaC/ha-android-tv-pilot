@@ -43,7 +43,8 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
         if not card_exists:
             _LOGGER.warning(
                 "Card file %s is missing; the dashboard card will not load"
-                " (the integration itself works). Reinstall the integration from HACS",
+                " (the integration itself works). Reinstall the integration (Settings > Marketplace;"
+                " HACS on Home Assistant 2026.10 and older)",
                 FRONTEND_DIR / CARD_FILENAME,
             )
             return

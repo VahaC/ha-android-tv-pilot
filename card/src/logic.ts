@@ -1,5 +1,5 @@
 // Pure helpers with no DOM or Lit dependencies, so they can be unit-tested in Node.
-import type { TvApp } from "./types";
+import type { LayoutId, TvApp } from "./types";
 
 export type Direction = "UP" | "DOWN" | "LEFT" | "RIGHT";
 
@@ -191,6 +191,65 @@ export function usableAccent(color: string | null | undefined, fallback: string)
 export function volumePercent(level: number | null | undefined): number | null {
   if (typeof level !== "number" || Number.isNaN(level)) return null;
   return Math.round(Math.min(1, Math.max(0, level)) * 100);
+}
+
+export const LAYOUTS: readonly LayoutId[] = ["remote", "apps", "wide"];
+const LAYOUT_ALIASES: Record<string, LayoutId> = { a: "remote", b: "apps", c: "wide" };
+
+/** Maps a configured layout (including the old a/b/c aliases) to its id, or null if unknown. */
+export function normalizeLayout(value: unknown): LayoutId | null {
+  if (typeof value !== "string") return null;
+  const v = value.trim().toLowerCase();
+  if ((LAYOUTS as readonly string[]).includes(v)) return v as LayoutId;
+  return LAYOUT_ALIASES[v] ?? null;
+}
+
+export interface StoredLayout {
+  layout: LayoutId;
+  /** The dashboard layout at the time of the choice. */
+  base: LayoutId;
+}
+
+/** Parses the per-browser layout choice from storage; tolerates old a/b/c values and junk. */
+export function parseStoredLayout(raw: string | null): StoredLayout | null {
+  if (!raw) return null;
+  try {
+    const v = JSON.parse(raw) as { layout?: unknown; base?: unknown } | null;
+    const layout = normalizeLayout(v?.layout);
+    const base = normalizeLayout(v?.base);
+    return layout && base ? { layout, base } : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The per-browser choice only applies while the dashboard layout is the one it was made against;
+ * once the dashboard (config) layout changes, the stored choice is dropped.
+ */
+export function effectiveOverride(stored: StoredLayout | null, configLayout: LayoutId): LayoutId | null {
+  return stored && stored.base === configLayout ? stored.layout : null;
+}
+
+const EDITOR_DEFAULTS: Record<string, unknown> = { show_screenshot: false, haptics: true, layout_switch: false };
+
+/**
+ * Tidies a card config for the editor: maps layout aliases to names, renames the old
+ * `prototype_switch` key to `layout_switch`, drops empty values and options left at their
+ * default. `layout` is always kept so the YAML shows the chosen look.
+ */
+export function tidyConfig(input: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...input };
+  if ("prototype_switch" in out) {
+    if (!("layout_switch" in out)) out.layout_switch = out.prototype_switch;
+    delete out.prototype_switch;
+  }
+  out.layout = normalizeLayout(out.layout) ?? "remote";
+  for (const [k, v] of Object.entries(out)) {
+    const empty = v === "" || v === undefined || v === null || (Array.isArray(v) && v.length === 0);
+    if (empty || (k in EDITOR_DEFAULTS && EDITOR_DEFAULTS[k] === v)) delete out[k];
+  }
+  return out;
 }
 
 /** True when every character can be typed over ADB `input text` (printable ASCII). */

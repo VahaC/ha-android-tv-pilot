@@ -1,6 +1,5 @@
 # Android TV Pilot
 
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/docs/faq/custom_repositories/)
 [![Validate](https://github.com/VahaC/ha-android-tv-pilot/actions/workflows/validate.yml/badge.svg)](https://github.com/VahaC/ha-android-tv-pilot/actions/workflows/validate.yml)
 [![Tests](https://github.com/VahaC/ha-android-tv-pilot/actions/workflows/tests.yml/badge.svg)](https://github.com/VahaC/ha-android-tv-pilot/actions/workflows/tests.yml)
 
@@ -19,6 +18,17 @@ The integration is self-sufficient: it does **not** need the core `androidtv` (A
   presses, volume, typing text and push updates (screen on/off, current app, volume).
 
 If the remote protocol is unavailable the integration works with ADB alone (slower keys).
+
+## Screenshots
+
+The remote card that ships with the integration, in the light and the dark theme:
+
+<p align="center">
+  <img src="docs/images/card-light.png" alt="Android TV Pilot remote card in the light theme" width="300">
+  &nbsp;&nbsp;
+  <img src="docs/images/card-dark.png" alt="Android TV Pilot remote card in the dark theme" width="300">
+</p>
+<p align="center"><em>Light</em> &nbsp;·&nbsp; <em>Dark</em></p>
 
 ## How turn on works
 
@@ -47,18 +57,35 @@ one wake.
 
 ## Installation
 
-### HACS (recommended)
+### Marketplace (Home Assistant 2026.11 and newer)
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=VahaC&repository=ha-android-tv-pilot&category=integration)
+Since Home Assistant 2026.11 the community store is built in as the **Marketplace**
+(Settings → Marketplace). Until Android TV Pilot is in the Marketplace catalog, add it from its
+link:
 
-1. Click the button above, or in HACS → ⋮ → *Custom repositories* add
-   `https://github.com/VahaC/ha-android-tv-pilot` with the type *Integration*.
-2. Download **Android TV Pilot** and restart Home Assistant.
-3. Add the integration:
+[![Open your Home Assistant instance and open a repository inside the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=VahaC&repository=ha-android-tv-pilot&category=integration)
+
+1. Click the button above, or go to **Settings** → **Marketplace**, select **Add from link** in
+   the upper-right corner, enter `VahaC/ha-android-tv-pilot` (or the full GitHub URL) under
+   **GitHub link** and select **Add**. If you are asked for the type, choose *Integration*.
+   Adding a repository by link needs GitHub to be connected to the Marketplace (Settings →
+   Devices & services → Marketplace → ⋮ → Reconfigure).
+2. On the repository page select **Install**, check the version and select **Install** again.
+3. The setup of Android TV Pilot opens on its own when the integration can load right away. If
+   Home Assistant needs a restart instead, a repair under **Settings** → **System** →
+   **Repairs** asks for it and can restart for you. You can also start the setup at any time:
 
    [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=android_tv_pilot)
 
    or Settings → Devices & services → *Add integration* → **Android TV Pilot**.
+
+The dashboard card is part of the integration and registers itself; there is nothing to install
+for it separately.
+
+> **Home Assistant 2026.10 or older:** use HACS → ⋮ → *Custom repositories*, add
+> `https://github.com/VahaC/ha-android-tv-pilot` with the type *Integration*, download
+> **Android TV Pilot** and restart Home Assistant
+> ([open in HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=VahaC&repository=ha-android-tv-pilot&category=integration)).
 
 ### Manual
 

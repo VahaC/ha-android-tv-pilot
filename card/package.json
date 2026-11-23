@@ -8,7 +8,8 @@
     "build": "vite build",
     "demo": "vite --config vite.demo.config.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "screenshots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
     "lit": "3.3.1"
@@ -16,6 +17,7 @@
   "devDependencies": {
     "@mdi/js": "7.4.47",
     "@types/node": "22.10.2",
+    "esbuild": "0.21.5",
     "typescript": "5.6.3",
     "vite": "5.4.21",
     "vitest": "2.1.9"

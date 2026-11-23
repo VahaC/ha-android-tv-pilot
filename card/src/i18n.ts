@@ -105,28 +105,28 @@ const en = {
   wake_tv: "Wake TV",
   dismiss: "Dismiss",
 
-  // PROTOTYPE (2026-11-23): layout switch strings
-  proto_layout: "Prototype layout",
-  proto_a: "A · Remote",
-  proto_b: "B · Apps",
-  proto_c: "C · Wide",
-  proto_reset: "Use config",
-  proto_overrides: "This browser shows a different layout than the card config ({layout}). Tap to go back to the config.",
+  // Layouts
+  layout_remote: "Remote first",
+  layout_apps: "Apps first",
+  layout_wide: "Wide",
+  layout_remote_help: "Tall phone remote: big pad, apps in a rail, app controls in a pull-up sheet.",
+  layout_apps_help: "Launcher style: app grid on top, controls for the running app right under it.",
+  layout_wide_help: "Columns for tablets and desktops: apps, remote, app controls side by side.",
+  layout_button: "Card layout: {layout}",
+  layout_menu: "Card layout",
+  layout_use_dashboard: "Use dashboard setting ({layout})",
+  layout_this_browser: "Chosen in this browser",
 
   // Editor
   ed_entity: "TV (Android TV Pilot media player)",
   ed_name: "Name",
   ed_layout: "Layout",
-  ed_layout_a: "A — Remote first",
-  ed_layout_b: "B — Apps first",
-  ed_layout_c: "C — Wide / tablet",
   ed_volume_entity: "Volume entity (overrides the integration's)",
   ed_pinned: "Pinned apps (shown first)",
   ed_hidden: "Hidden apps",
   ed_screenshot: "Show screenshot preview",
   ed_haptics: "Haptic feedback",
-  // PROTOTYPE (2026-11-23)
-  ed_proto: "Show the A/B/C layout switch",
+  ed_layout_switch: "Show layout button on the card",
 };
 
 export type StringKey = keyof typeof en;
@@ -236,27 +236,26 @@ const uk: Table = {
   wake_tv: "Розбудити",
   dismiss: "Закрити",
 
-  // PROTOTYPE (2026-11-23): layout switch strings
-  proto_layout: "Макет (прототип)",
-  proto_a: "A · Пульт",
-  proto_b: "B · Застосунки",
-  proto_c: "C · Широкий",
-  proto_reset: "Як у конфігу",
-  proto_overrides: "Цей браузер показує інший макет, ніж у конфігурації картки ({layout}). Торкніться, щоб повернутися до конфігурації.",
+  layout_remote: "Спершу пульт",
+  layout_apps: "Спершу застосунки",
+  layout_wide: "Широкий",
+  layout_remote_help: "Високий пульт як на телефоні: великий джойстик, застосунки в стрічці, керування застосунком у висувній панелі.",
+  layout_apps_help: "Як лаунчер: сітка застосунків угорі, керування запущеним застосунком одразу під нею.",
+  layout_wide_help: "Колонки для планшета й комп'ютера: застосунки, пульт і керування застосунком поруч.",
+  layout_button: "Макет картки: {layout}",
+  layout_menu: "Макет картки",
+  layout_use_dashboard: "Як на панелі ({layout})",
+  layout_this_browser: "Вибрано в цьому браузері",
 
   ed_entity: "Телевізор (медіаплеєр Android TV Pilot)",
   ed_name: "Назва",
   ed_layout: "Макет",
-  ed_layout_a: "A — спершу пульт",
-  ed_layout_b: "B — спершу застосунки",
-  ed_layout_c: "C — широкий / планшет",
   ed_volume_entity: "Сутність гучності (замість тієї, що в інтеграції)",
   ed_pinned: "Закріплені застосунки (показуються першими)",
   ed_hidden: "Приховані застосунки",
   ed_screenshot: "Показувати знімок екрана",
   ed_haptics: "Тактильний відгук",
-  // PROTOTYPE (2026-11-23)
-  ed_proto: "Показувати перемикач макетів A/B/C",
+  ed_layout_switch: "Показувати кнопку макета на картці",
 };
 
 const tables: Record<string, Table> = { en, uk };

@@ -140,7 +140,9 @@ repeat awaits the previous press, so presses cannot pile up. Rules:
 
 ## Services
 
-All services take a target: the media_player or remote entity of the TV, or its device.
+All services take a target: the media_player or remote entity of the TV. (In YAML a `device_id` target
+of the TV also works; the UI picker offers the entities, since hassfest does not allow device filters
+on service targets.)
 
 | Service         | Fields                                                     | Notes |
 |-----------------|------------------------------------------------------------|-------|

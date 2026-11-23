@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Self-sufficient Android TV integration: talks to the TV over ADB (`adb-shell` 0.4.4) and the
-  Android TV Remote protocol v2 (`androidtvremote2` 0.3.3); no dependency on the core `androidtv`
+- Self-sufficient Android TV integration: talks to the TV over ADB (`adb-shell` >= 0.4.4) and the
+  Android TV Remote protocol v2 (`androidtvremote2` >= 0.3.3; minimum versions, so they follow
+  the versions Home Assistant core ships; tested with 0.4.4 and 0.3.3); no dependency on the core `androidtv`
   or `androidtv_remote` integrations.
 - Config flow: ADB connection with a clear prompt for the "Allow USB debugging" dialog, remote
   protocol pairing with the on-screen code (or ADB only), optional wake entity and wake timing.
@@ -31,10 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Websocket API for the card (`apps`, `send_key`, `send_text`, `launch_app`, `open_url`,
   `screenshot_url`) and an authenticated, rate-limited screenshot endpoint.
 - Automatic registration of the dashboard card as a Lovelace resource.
+- Installable from the Home Assistant Marketplace (2026.11+, "Add from link") or HACS
+  (2026.10 and older); manifest `categories` set for the catalog.
 - Diagnostics, English and Ukrainian translations.
 - Integration icon in `custom_components/android_tv_pilot/brand/` (light and dark, 1x and 2x;
   SVG sources in `docs/brand/`).
-- HACS and hassfest validation, tests (ruff, pytest with the Home Assistant harness, card
+- Marketplace / HACS catalog validation (`hacs/action`) and hassfest, tests (ruff, pytest with the Home Assistant harness, card
   typecheck/test/build with a bundle-up-to-date check), Dependabot and issue templates.
 
 ### Security

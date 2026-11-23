@@ -1,19 +1,23 @@
 // Shared types for the Android TV Pilot card. The attribute and WebSocket shapes mirror the
 // contract with the android_tv_pilot integration; do not rename fields here without changing it.
 
-export type LayoutId = "a" | "b" | "c";
+export type LayoutId = "remote" | "apps" | "wide";
+/** Old single-letter layout names still accepted in YAML: a = remote, b = apps, c = wide. */
+export type LayoutAlias = "a" | "b" | "c";
 
 export interface CardConfig {
   type: string;
   entity: string;
   name?: string;
-  layout?: LayoutId;
+  layout?: LayoutId | LayoutAlias;
   volume_entity?: string;
   pinned_apps?: string[];
   hidden_apps?: string[];
   show_screenshot?: boolean;
   haptics?: boolean;
-  /** PROTOTYPE (2026-11-23): shows the temporary A/B/C layout switch (default true). */
+  /** Shows the layout button in the card header (default true). */
+  layout_switch?: boolean;
+  /** Old name of `layout_switch`, still read as an alias. */
   prototype_switch?: boolean;
 }
 

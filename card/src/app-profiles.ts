@@ -128,8 +128,8 @@ export const PROFILES: AppProfile[] = [
       captions,
       seekBack(["LEFT"]),
       seekFwd(["RIGHT"]),
-      { id: "skip_back", type: "keys", keys: ["LEFT", "LEFT", "LEFT"], icon: "mdi:rewind-30", label: L("Back 30 s", "Назад 30 с") },
-      { id: "skip_fwd", type: "keys", keys: ["RIGHT", "RIGHT", "RIGHT"], icon: "mdi:fast-forward-30", label: L("Forward 30 s", "Вперед 30 с") },
+      { id: "skip_back", type: "keys", keys: ["LEFT", "LEFT", "LEFT"], icon: "mdi:rewind-30", label: L("Back 30\u00a0s", "Назад 30\u00a0с") },
+      { id: "skip_fwd", type: "keys", keys: ["RIGHT", "RIGHT", "RIGHT"], icon: "mdi:fast-forward-30", label: L("Forward 30\u00a0s", "Вперед 30\u00a0с") },
     ],
   },
   {

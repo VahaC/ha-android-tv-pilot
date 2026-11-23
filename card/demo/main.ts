@@ -323,7 +323,7 @@ function applyConfig(): void {
     entity: TV,
     layout: $<HTMLSelectElement>("layout").value as CardConfig["layout"],
     show_screenshot: $<HTMLInputElement>("shot").checked,
-    prototype_switch: $<HTMLInputElement>("proto").checked,
+    layout_switch: $<HTMLInputElement>("layoutswitch").checked,
   };
   if ($<HTMLInputElement>("pinned").checked) config.pinned_apps = ["org.jellyfin.androidtv", "com.google.android.youtube.tv"];
   card.setConfig(config);
@@ -387,12 +387,28 @@ for (const id of ["unreachable", "wakebtn", "adb", "remote", "volent", "appsmode
     publish();
   });
 }
-for (const id of ["layout", "shot", "proto", "pinned"]) $(id).addEventListener("change", applyConfig);
+for (const id of ["layout", "shot", "layoutswitch", "pinned"]) $(id).addEventListener("change", applyConfig);
 
 window.addEventListener("haptic", (e) => log("hap", `haptic: ${(e as CustomEvent).detail}`));
 window.addEventListener("error", (e) => log("err", `page error: ${e.message}`));
 
+// ---- URL parameters (deterministic setups for scripts/screenshots.mjs) -------------------
+// ?layout=remote|apps|wide  &switch=0|1 (layout button)  &shot=0|1  &theme=light|dark  &lang=en|uk  &width=390
+// &state=off|waking|on|asleep|failed  &app=<package>  &chrome=0 (card only, no control panel)
+const params = new URLSearchParams(location.search);
+const setChecked = (id: string, on: boolean) => ($<HTMLInputElement>(id).checked = on);
+if (params.has("layout")) $<HTMLSelectElement>("layout").value = params.get("layout")!;
+if (params.has("switch")) setChecked("layoutswitch", params.get("switch") === "1");
+if (params.has("shot")) setChecked("shot", params.get("shot") === "1");
+if (params.get("theme") === "dark") $("theme").click();
+if (params.get("lang") === "uk") $("lang").click();
+if (params.get("chrome") === "0") document.body.classList.add("bare");
+
 applyConfig();
+const startState = params.get("state");
+if (startState && STATES[startState]) STATES[startState]();
+const startApp = params.get("app");
+if (startApp && tv.power_state === "on") setApp(startApp);
 publish();
-setViewport(390);
+setViewport(Number(params.get("width")) || 390);
 log("info", `Demo ready (${USE_BUNDLE ? "built bundle" : "sources"}). Tap the power button to start a simulated BLE wake.`);

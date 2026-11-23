@@ -1,15 +1,32 @@
 {
   "domain": "android_tv_pilot",
   "name": "Android TV Pilot",
-  "after_dependencies": ["lovelace"],
-  "codeowners": ["@VahaC"],
+  "after_dependencies": [
+    "lovelace"
+  ],
+  "categories": [
+    "media_entertainment.tv_streaming"
+  ],
+  "codeowners": [
+    "@VahaC"
+  ],
   "config_flow": true,
-  "dependencies": ["http", "frontend", "websocket_api"],
+  "dependencies": [
+    "http",
+    "frontend",
+    "websocket_api"
+  ],
   "documentation": "https://github.com/VahaC/ha-android-tv-pilot",
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/VahaC/ha-android-tv-pilot/issues",
-  "loggers": ["adb_shell", "androidtvremote2"],
-  "requirements": ["adb-shell[async]==0.4.4", "androidtvremote2==0.3.3"],
+  "loggers": [
+    "adb_shell",
+    "androidtvremote2"
+  ],
+  "requirements": [
+    "adb-shell[async]>=0.4.4",
+    "androidtvremote2>=0.3.3"
+  ],
   "version": "0.1.0"
 }

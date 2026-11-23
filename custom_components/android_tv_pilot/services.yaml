@@ -2,8 +2,6 @@ send_key:
   target:
     entity:
       integration: android_tv_pilot
-    device:
-      integration: android_tv_pilot
   fields:
     key:
       required: true
@@ -25,8 +23,6 @@ send_text:
   target:
     entity:
       integration: android_tv_pilot
-    device:
-      integration: android_tv_pilot
   fields:
     text:
       required: true
@@ -42,8 +38,6 @@ launch_app:
   target:
     entity:
       integration: android_tv_pilot
-    device:
-      integration: android_tv_pilot
   fields:
     package:
       required: true
@@ -54,8 +48,6 @@ launch_app:
 open_url:
   target:
     entity:
-      integration: android_tv_pilot
-    device:
       integration: android_tv_pilot
   fields:
     url:
@@ -72,8 +64,6 @@ adb_command:
   target:
     entity:
       integration: android_tv_pilot
-    device:
-      integration: android_tv_pilot
   fields:
     command:
       required: true
@@ -84,6 +74,4 @@ adb_command:
 refresh_apps:
   target:
     entity:
-      integration: android_tv_pilot
-    device:
       integration: android_tv_pilot

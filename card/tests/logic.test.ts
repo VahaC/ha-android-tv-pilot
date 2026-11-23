@@ -2,8 +2,13 @@ import { describe, expect, it } from "vitest";
 import { GENERIC_PROFILE, PROFILES, profileFor } from "../src/app-profiles";
 import { pickLanguage, translator } from "../src/i18n";
 import {
+  LAYOUTS,
   arrangeApps,
   detectSwipe,
+  effectiveOverride,
+  normalizeLayout,
+  parseStoredLayout,
+  tidyConfig,
   fillTemplate,
   initials,
   matchScore,
@@ -184,7 +189,54 @@ describe("apps and colours", () => {
   });
 });
 
+describe("layouts", () => {
+  it("accepts names and the old a/b/c aliases", () => {
+    expect(normalizeLayout("remote")).toBe("remote");
+    expect(normalizeLayout("Apps")).toBe("apps");
+    expect(normalizeLayout("a")).toBe("remote");
+    expect(normalizeLayout("b")).toBe("apps");
+    expect(normalizeLayout("c")).toBe("wide");
+    expect(normalizeLayout("d")).toBeNull();
+    expect(normalizeLayout(undefined)).toBeNull();
+  });
+
+  it("parses the stored per-browser choice, including old values", () => {
+    expect(parseStoredLayout('{"layout":"wide","base":"remote"}')).toEqual({ layout: "wide", base: "remote" });
+    expect(parseStoredLayout('{"layout":"b","base":"a"}')).toEqual({ layout: "apps", base: "remote" });
+    expect(parseStoredLayout("b")).toBeNull();
+    expect(parseStoredLayout("{oops")).toBeNull();
+    expect(parseStoredLayout(null)).toBeNull();
+  });
+
+  it("drops the stored choice once the dashboard layout changes", () => {
+    const stored = { layout: "wide" as const, base: "remote" as const };
+    expect(effectiveOverride(stored, "remote")).toBe("wide");
+    expect(effectiveOverride(stored, "apps")).toBeNull();
+    expect(effectiveOverride(null, "remote")).toBeNull();
+  });
+
+  it("tidies editor output: names, renamed switch key, defaults removed, layout kept", () => {
+    expect(tidyConfig({ entity: "media_player.tv", layout: "c", prototype_switch: true, haptics: true, name: "" })).toEqual({
+      entity: "media_player.tv",
+      layout: "wide",
+      layout_switch: true,
+    });
+    expect(tidyConfig({ entity: "x", layout_switch: false, show_screenshot: false })).toEqual({ entity: "x", layout: "remote" });
+    expect(tidyConfig({ entity: "x", layout_switch: false, prototype_switch: true })).toEqual({ entity: "x", layout: "remote" });
+  });
+});
+
 describe("i18n", () => {
+  it("has a name and a helper for every layout in both languages", () => {
+    for (const lang of ["en", "uk"] as const) {
+      const t = translator(lang);
+      for (const id of LAYOUTS) {
+        expect(t(`layout_${id}` as never)).not.toMatch(/^layout_/);
+        expect(t(`layout_${id}_help` as never)).not.toMatch(/^layout_/);
+      }
+    }
+  });
+
   it("picks Ukrainian only for uk", () => {
     expect(pickLanguage("uk")).toBe("uk");
     expect(pickLanguage("uk-UA")).toBe("uk");

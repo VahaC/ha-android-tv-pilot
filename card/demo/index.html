@@ -130,6 +130,25 @@
         white-space: pre-wrap;
         word-break: break-all;
       }
+      /* ?chrome=0: card only, for scripted screenshots */
+      body.bare .page {
+        display: block;
+        min-height: 0;
+      }
+      body.bare aside,
+      body.bare .frame-label {
+        display: none;
+      }
+      body.bare .stage {
+        display: block;
+        padding: 0;
+      }
+      body.bare .frame {
+        max-width: none;
+        padding: 20px;
+        box-sizing: content-box;
+        background: var(--page-bg);
+      }
       #log .err {
         color: #db4437;
       }
@@ -173,9 +192,9 @@
         <section>
           <h2>Card config</h2>
           <div class="row" style="flex-direction: column; align-items: flex-start">
-            <label>layout <select id="layout"><option>a</option><option>b</option><option>c</option></select></label>
+            <label>layout <select id="layout"><option value="remote">remote — Remote first</option><option value="apps">apps — Apps first</option><option value="wide">wide — Wide</option></select></label>
             <label><input type="checkbox" id="shot" /> show_screenshot</label>
-            <label><input type="checkbox" id="proto" checked /> prototype_switch</label>
+            <label><input type="checkbox" id="layoutswitch" /> layout_switch (layout button in the header)</label>
             <label><input type="checkbox" id="pinned" /> pinned_apps: Jellyfin, YouTube</label>
           </div>
         </section>

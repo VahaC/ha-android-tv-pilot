@@ -7,12 +7,16 @@ a keyboard and an optional screenshot preview.
 The card is a single ES module served by the integration:
 `custom_components/android_tv_pilot/frontend/android-tv-pilot-card.js`.
 
+| Light | Dark |
+| --- | --- |
+| ![Remote first layout, light theme](images/card-light.png) | ![Remote first layout, dark theme](images/card-dark.png) |
+
 ## Configuration
 
 ```yaml
 type: custom:android-tv-pilot-card
 entity: media_player.living_room_tv
-layout: a
+layout: remote
 pinned_apps:
   - org.jellyfin.androidtv
   - com.google.android.youtube.tv
@@ -26,16 +30,18 @@ show_screenshot: false
 | `type` | string | — | `custom:android-tv-pilot-card` |
 | `entity` | string | — (required) | The integration's `media_player`. It must have the `entry_id` attribute. |
 | `name` | string | entity friendly name | Title shown in the header. |
-| `layout` | `a` \| `b` \| `c` | `a` | A = remote first, B = apps first, C = wide / tablet. See [Layouts](#layouts). |
+| `layout` | `remote` \| `apps` \| `wide` | `remote` | The card's look: Remote first, Apps first or Wide. See [Layouts](#layouts). `a`, `b`, `c` are accepted as older names for the same three. |
 | `volume_entity` | string | the entity's `volume_entity` attribute | A `media_player` (soundbar, receiver) that takes the volume buttons. Overrides the integration's setting. |
 | `pinned_apps` | list of packages | `[]` | Shown first, in this order. Pinning also shows an app the integration marked `hidden`. |
 | `hidden_apps` | list of packages | `[]` | Never shown in the launcher. Apps flagged `system` (preinstalled YouTube, Netflix, Play Store) are shown; only `hidden` apps and this list are left out. |
 | `show_screenshot` | bool | `false` | Adds a tap-to-refresh screenshot of the TV screen. |
 | `haptics` | bool | `true` | Sends HA `haptic` events (`light`, `selection`, `success`, `failure`) on key presses. |
-| `prototype_switch` | bool | `true` | Shows the temporary A/B/C layout switch inside the card (see below). |
+| `layout_switch` | bool | `false` | Adds a small layout button to the card header so the layout can be changed per browser (see [Layout button](#layout-button)). |
 
-The visual editor (card settings in the dashboard) covers every option; the app pickers list the
-apps reported by the TV, and accept any package name typed in by hand.
+The visual editor (card settings in the dashboard) covers every option. The layout choice comes
+right after the TV, with a one-line description of the selected layout, and the preview updates as
+soon as you pick one. The app pickers list the apps reported by the TV and accept any package name
+typed in by hand.
 
 ### Volume
 
@@ -62,27 +68,40 @@ text field instead.
 
 ## Layouts
 
-All three layouts use the same building blocks; only their arrangement differs.
+All three layouts use the same building blocks; only their arrangement differs. Choose one in the
+card editor (**Layout**) or with `layout:` in YAML.
 
-- **A — Remote first.** Tall phone-style remote: navigation pad on top, then BACK / HOME / MENU /
-  SETTINGS / SEARCH / ASSISTANT, volume, media keys and an app rail. In-app controls, the keyboard
-  and the screenshot live in a bottom sheet; tap the bar at the bottom of the card to open it.
-- **B — Apps first.** Launcher-style app grid on top, the running app's controls directly under it,
-  then a compact pad next to the navigation keys, volume, media keys and a folded keyboard.
-- **C — Wide / tablet.** Columns: apps (+ screenshot) | pad, keys, volume, media | in-app controls +
-  keyboard. Three columns from about 940 px of card width, two from 620 px, one below that. In a
-  sections dashboard it asks for the full width.
+- **Remote first** (`remote`, default). Tall phone-style remote: navigation pad on top, then BACK /
+  HOME / MENU / SETTINGS / SEARCH / ASSISTANT, volume, media keys and an app rail. In-app controls,
+  the keyboard and the screenshot live in a bottom sheet; tap the bar at the bottom of the card to
+  open it.
+- **Apps first** (`apps`). Launcher-style app grid on top, the running app's controls directly under
+  it, then a compact pad next to the navigation keys, volume, media keys and a folded keyboard.
+- **Wide** (`wide`). Columns for tablets and desktops: apps (+ screenshot) | pad, keys, volume,
+  media | in-app controls + keyboard. Three columns from about 940 px of card width, two from
+  620 px, one below that. In a sections dashboard it asks for the full width.
 
-### Temporary layout switch
+| Layout | Light | Dark |
+| --- | --- | --- |
+| Apps first | ![Apps first layout, light theme](images/card-apps-light.png) | ![Apps first layout, dark theme](images/card-apps-dark.png) |
 
-While `prototype_switch` is on, a dashed strip at the top of the card lets you flip between A, B and
-C on real data. The choice is stored in this browser only (localStorage key
-`android-tv-pilot:layout`) and overrides `layout` from the config until you press **Use config**,
-which appears while an override is active. Changing `layout` in the card config clears the stored
-choice, so the editor always wins.
-Set `prototype_switch: false` to hide it. All code for the switch is marked
-`PROTOTYPE (2026-11-23)` and will be removed once a layout is chosen.
+![Wide layout, light theme](images/card-wide-light.png)
 
+![Wide layout, dark theme](images/card-wide-dark.png)
+
+The screenshots come from the demo harness (`npm run screenshots`, see [Development](#development)).
+
+### Layout button
+
+With `layout_switch: true` (editor: **Show layout button on the card**) the header gets a small
+layout button next to power. It opens a menu with the three layouts, the current one checked. The
+choice applies only in this browser (localStorage key `android-tv-pilot:layout`); while it differs
+from the dashboard, the button shows a dot and the menu offers **Use dashboard setting**. Changing
+`layout` in the card config drops the stored choice, and with the button off (the default) any
+stored choice is ignored, so the editor's layout always wins.
+
+The menu works from the keyboard: Enter, Space or Down Arrow open it, the arrows and Home / End move,
+Escape closes it and returns focus to the button. A click outside also closes it.
 ### Navigation modes
 
 The D-pad / Touchpad toggle above the pad is remembered per browser
@@ -185,6 +204,20 @@ npm run typecheck  # tsc --noEmit
 npm test           # vitest: profile matching, templating, wake progress, swipe detection
 npm run build      # writes custom_components/android_tv_pilot/frontend/android-tv-pilot-card.js
 ```
+
+Screenshots in `docs/images` are regenerated from the demo with Playwright, which is deliberately not
+a dependency (CI runs `npm ci`):
+
+```bash
+npm run build                      # the screenshots use the built bundle
+npm i --no-save playwright         # does not touch package.json / package-lock.json
+npx playwright install chromium
+npm run screenshots
+```
+
+The demo also takes URL parameters for scripted setups: `layout=remote|apps|wide`, `switch=0|1`
+(layout button), `shot=0|1`, `theme=light|dark`, `lang=en|uk`, `state=off|waking|on|asleep|failed`,
+`app=<package>`, `width=<card px>`, `chrome=0` (card only, no control panel) and `bundle`.
 
 The demo (`card/demo`) runs the card against a mock `hass`: a power state machine
 (off → waking → on after 6–12 s), 17 mock apps, mocked WebSocket commands that log to the on-page

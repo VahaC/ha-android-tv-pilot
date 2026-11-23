@@ -7,8 +7,12 @@ import "./dpad";
 import type { KeyEventDetail } from "./dpad";
 import { local, pickLanguage, translator, type Lang, type StringKey, type Translate } from "./i18n";
 import {
+  LAYOUTS,
   arrangeApps,
+  effectiveOverride,
   fillTemplate,
+  normalizeLayout,
+  parseStoredLayout,
   initials,
   normalizeUrl,
   onColor,
@@ -21,9 +25,9 @@ import "./touchpad";
 import type { CardConfig, Hass, HassEntity, KeyAction, LayoutId, TvApp, TvAttributes, TvKey } from "./types";
 
 const NAV_MODE_KEY = "android-tv-pilot:nav-mode";
-// PROTOTYPE (2026-11-23): per-browser layout override for the A/B/C comparison switch. Stored as
-// {layout, base}: `base` is the config layout at the time of the choice, so changing `layout` in
-// the editor clears the override instead of being silently beaten by it.
+// Per-browser layout choice from the header layout button. Stored as {layout, base}: `base` is the
+// dashboard (config) layout at the time of the choice, so changing `layout` in the editor drops the
+// stored choice instead of being silently beaten by it.
 const LAYOUT_KEY = "android-tv-pilot:layout";
 const OPTIMISTIC_WAKE_MS = 10_000;
 const VOLUME_REPEAT_MS = 250;
@@ -50,23 +54,6 @@ function readStore(key: string): string | null {
   }
 }
 
-// PROTOTYPE (2026-11-23)
-interface StoredLayout {
-  layout: LayoutId;
-  base: LayoutId;
-}
-
-// PROTOTYPE (2026-11-23)
-function readLayoutOverride(): StoredLayout | null {
-  try {
-    const v = JSON.parse(readStore(LAYOUT_KEY) ?? "null") as StoredLayout | null;
-    const ok = (l: unknown): l is LayoutId => l === "a" || l === "b" || l === "c";
-    return v && ok(v.layout) && ok(v.base) ? v : null;
-  } catch {
-    return null;
-  }
-}
-
 function writeStore(key: string, value: string | null): void {
   try {
     if (value === null) window.localStorage.removeItem(key);
@@ -84,8 +71,11 @@ export class AndroidTvPilotCard extends LitElement {
   @state() private appsStatus: "idle" | "loading" | "ready" | "error" = "idle";
   @state() private appsError = "";
   @state() private navMode: NavMode = readStore(NAV_MODE_KEY) === "touchpad" ? "touchpad" : "dpad";
-  // PROTOTYPE (2026-11-23): layout chosen with the in-card switch; overrides config.layout.
+  /** Layout chosen with the header layout button in this browser; overrides the dashboard layout. */
   @state() private layoutOverride: LayoutId | null = null;
+  /** Dashboard layout from the config, normalised (a/b/c aliases mapped). */
+  @state() private configLayout: LayoutId = "remote";
+  @state() private layoutMenuOpen = false;
   /** Local "waking" shown from the tap on power until the entity next updates (max 10 s). */
   @state() private optimisticWakeAt: number | null = null;
   @state() private toasts: Toast[] = [];
@@ -118,6 +108,7 @@ export class AndroidTvPilotCard extends LitElement {
   private heldKeys = new Set<TvKey>();
   private volumeLoop: { active: boolean } | null = null;
   private toastId = 0;
+  private revealedApp = "";
   private observer: IntersectionObserver | null = null;
   private onVisibility = () => {
     if (document.visibilityState !== "visible") this.releaseAllKeys();
@@ -128,26 +119,25 @@ export class AndroidTvPilotCard extends LitElement {
 
   setConfig(config: CardConfig): void {
     if (!config || !config.entity) throw new Error("Set 'entity' to an Android TV Pilot media_player");
-    if (config.layout && !["a", "b", "c"].includes(config.layout)) throw new Error("'layout' must be a, b or c");
-    // PROTOTYPE (2026-11-23): prototype_switch defaults to true while the layouts are compared.
-    this.config = { layout: "a", haptics: true, prototype_switch: true, show_screenshot: false, ...config };
-    // PROTOTYPE (2026-11-23): a stored override only survives while the config layout is unchanged.
-    const stored = readLayoutOverride();
-    const base = this.config.layout ?? "a";
-    if (stored && stored.base === base) {
-      this.layoutOverride = stored.layout;
-    } else {
-      if (readStore(LAYOUT_KEY) !== null) writeStore(LAYOUT_KEY, null);
-      this.layoutOverride = null;
-    }
+    const layout = config.layout === undefined ? "remote" : normalizeLayout(config.layout);
+    if (!layout) throw new Error("'layout' must be remote, apps or wide");
+    // The layout is chosen in the card editor; the header button is an opt-in extra.
+    // `prototype_switch` is the old name of `layout_switch` and is still read.
+    const layoutSwitch = config.layout_switch ?? config.prototype_switch ?? false;
+    this.config = { haptics: true, show_screenshot: false, ...config, layout, layout_switch: layoutSwitch };
+    this.configLayout = layout;
+    // A stored per-browser choice only survives while the dashboard layout is unchanged.
+    const stored = parseStoredLayout(readStore(LAYOUT_KEY));
+    this.layoutOverride = effectiveOverride(stored, layout);
+    if (readStore(LAYOUT_KEY) !== null && !this.layoutOverride) writeStore(LAYOUT_KEY, null);
   }
 
   getCardSize(): number {
-    return { a: 12, b: 10, c: 8 }[this.layout];
+    return { remote: 12, apps: 10, wide: 8 }[this.layout];
   }
 
   getGridOptions() {
-    return this.layout === "c"
+    return this.layout === "wide"
       ? { columns: "full", rows: "auto", min_columns: 6 }
       : { columns: 6, rows: "auto", min_columns: 4 };
   }
@@ -162,10 +152,13 @@ export class AndroidTvPilotCard extends LitElement {
     return translator(this.uiLang);
   }
 
-  /** PROTOTYPE (2026-11-23): the switch wins over config until cleared. */
+  /**
+   * The per-browser choice wins over the dashboard layout only while the layout button is enabled;
+   * with the button off (the default) the editor's layout always applies.
+   */
   private get layout(): LayoutId {
-    if (this.config?.prototype_switch !== false && this.layoutOverride) return this.layoutOverride;
-    return this.config?.layout ?? "a";
+    if (this.config?.layout_switch === true && this.layoutOverride) return this.layoutOverride;
+    return this.configLayout;
   }
 
   private get entity(): HassEntity | undefined {
@@ -233,6 +226,8 @@ export class AndroidTvPilotCard extends LitElement {
     this.stopWakeTicker();
     this.stopShotTimer();
     this.releaseAllKeys();
+    document.removeEventListener("pointerdown", this.onOutsidePointer, true);
+    this.layoutMenuOpen = false;
   }
 
   protected shouldUpdate(changed: PropertyValues): boolean {
@@ -284,7 +279,23 @@ export class AndroidTvPilotCard extends LitElement {
     }
     if (this.waking) this.startWakeTicker();
     else this.stopWakeTicker();
+    this.revealRunningApp();
     this.syncShotTimer();
+  }
+
+  /** Scrolls the app rail (remote layout) so the running app's tile is in view, once per app. */
+  private revealRunningApp(): void {
+    const rail = this.renderRoot.querySelector<HTMLElement>(".tiles.rail");
+    const tile = rail?.querySelector<HTMLElement>(".tile.running")?.parentElement;
+    const key = `${this.layout}:${this.attrs.app_id ?? ""}`;
+    if (!rail || !tile || key === this.revealedApp) return;
+    this.revealedApp = key;
+    const left = tile.offsetLeft - rail.offsetLeft;
+    const right = left + tile.offsetWidth;
+    // Leave room for the fade on the right edge of the rail.
+    if (left < rail.scrollLeft || right > rail.scrollLeft + rail.clientWidth * 0.85) {
+      rail.scrollLeft = Math.max(0, right - rail.clientWidth * 0.8);
+    }
   }
 
   private startWakeTicker(): void {
@@ -571,7 +582,7 @@ export class AndroidTvPilotCard extends LitElement {
     if (!this.config?.show_screenshot || this.power !== "on" || !this.visible) return false;
     if (document.visibilityState !== "visible") return false;
     // In layout A the screenshot lives in the bottom sheet: no signed URLs while it is not shown.
-    if (this.layout === "a" && !(this.sheetOpen && this.sheetTab === "screen")) return false;
+    if (this.layout === "remote" && !(this.sheetOpen && this.sheetTab === "screen")) return false;
     return true;
   }
 
@@ -653,43 +664,133 @@ export class AndroidTvPilotCard extends LitElement {
     return html`<span class="initials">${initials(app?.label ?? fallbackLabel)}</span>`;
   }
 
-  private renderProtoSwitch(): TemplateResult | typeof nothing {
-    // PROTOTYPE (2026-11-23): temporary A/B/C switch for comparing layouts live. Remove with
-    // LAYOUT_KEY, layoutOverride, the proto_* strings and the .proto styles once a layout is picked.
-    if (this.config.prototype_switch === false) return nothing;
-    const t = this.t;
-    const pick = (l: LayoutId | null) => {
-      this.haptic("selection");
-      this.layoutOverride = l;
-      const base = this.config.layout ?? "a";
-      writeStore(LAYOUT_KEY, l === null ? null : JSON.stringify({ layout: l, base } satisfies StoredLayout));
+  // ---- layout button (optional, `layout_switch: true`) ------------------------------------
+
+  private static readonly LAYOUT_ICONS: Record<LayoutId, string> = {
+    remote: "mdi:remote-tv",
+    apps: "mdi:apps",
+    wide: "mdi:view-column-outline",
+  };
+
+  private layoutName(id: LayoutId): string {
+    return this.t(`layout_${id}` as StringKey);
+  }
+
+  /** Stores a per-browser layout; picking the dashboard's own layout (or null) clears the choice. */
+  private pickLayout(layout: LayoutId | null): void {
+    this.haptic("selection");
+    const override = layout && layout !== this.configLayout ? layout : null;
+    this.layoutOverride = override;
+    writeStore(LAYOUT_KEY, override ? JSON.stringify({ layout: override, base: this.configLayout }) : null);
+    this.closeLayoutMenu(true);
+  }
+
+  private onOutsidePointer = (e: Event): void => {
+    const wrap = this.renderRoot.querySelector(".layout-wrap");
+    if (wrap && !e.composedPath().includes(wrap)) this.closeLayoutMenu(false);
+  };
+
+  private openLayoutMenu(focus: "checked" | "first" | "last" = "checked"): void {
+    this.layoutMenuOpen = true;
+    document.addEventListener("pointerdown", this.onOutsidePointer, true);
+    void this.updateComplete.then(() => {
+      const items = this.menuItems();
+      const target =
+        focus === "last" ? items[items.length - 1]
+        : focus === "first" ? items[0]
+        : items.find((i) => i.getAttribute("aria-checked") === "true") ?? items[0];
+      target?.focus();
+    });
+  }
+
+  private closeLayoutMenu(returnFocus: boolean): void {
+    if (!this.layoutMenuOpen) return;
+    this.layoutMenuOpen = false;
+    document.removeEventListener("pointerdown", this.onOutsidePointer, true);
+    if (returnFocus) {
+      void this.updateComplete.then(() => this.renderRoot.querySelector<HTMLElement>(".layout-btn")?.focus());
+    }
+  }
+
+  private menuItems(): HTMLElement[] {
+    return [...this.renderRoot.querySelectorAll<HTMLElement>(".layout-menu [role^='menuitem']")];
+  }
+
+  /** Menu keyboard: arrows / Home / End move, Escape closes and returns focus, Tab closes. */
+  private onMenuKey(e: KeyboardEvent): void {
+    const items = this.menuItems();
+    const i = items.indexOf((this.renderRoot as ShadowRoot).activeElement as HTMLElement);
+    const move = (n: number) => {
+      e.preventDefault();
+      items[(n + items.length) % items.length]?.focus();
     };
-    const options: [LayoutId, StringKey][] = [["a", "proto_a"], ["b", "proto_b"], ["c", "proto_c"]];
-    return html`<div class="proto" role="group" aria-label=${t("proto_layout")}>
-      <span class="proto-label"><ha-icon icon="mdi:flask-outline"></ha-icon>${t("proto_layout")}</span>
-      <div class="seg">
-        ${options.map(
-          ([id, key]) => html`<button
-            class="seg-btn ${this.layout === id ? "on" : ""}"
-            aria-pressed=${this.layout === id ? "true" : "false"}
-            @click=${() => pick(id)}
-          >
-            ${t(key)}
-          </button>`,
-        )}
-      </div>
-      ${this.layoutOverride
-        ? html`<button
-            class="proto-reset"
-            title=${t("proto_overrides", { layout: (this.config.layout ?? "a").toUpperCase() })}
-            @click=${() => pick(null)}
-          >
-            <ha-icon icon="mdi:restore"></ha-icon>${t("proto_reset")} (${(this.config.layout ?? "a").toUpperCase()})
-          </button>`
+    if (e.key === "ArrowDown") move(i + 1);
+    else if (e.key === "ArrowUp") move(i - 1);
+    else if (e.key === "Home") move(0);
+    else if (e.key === "End") move(items.length - 1);
+    else if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      this.closeLayoutMenu(true);
+    } else if (e.key === "Tab") this.closeLayoutMenu(false);
+  }
+
+  private renderLayoutButton(): TemplateResult | typeof nothing {
+    if (this.config.layout_switch !== true) return nothing;
+    const t = this.t;
+    const current = this.layout;
+    const open = this.layoutMenuOpen;
+    return html`<div class="layout-wrap">
+      <button
+        class="key round layout-btn ${open ? "pressed" : ""} ${this.layoutOverride ? "overridden" : ""}"
+        aria-label=${t("layout_button", { layout: this.layoutName(current) })}
+        title=${t("layout_button", { layout: this.layoutName(current) })}
+        aria-haspopup="menu"
+        aria-expanded=${open ? "true" : "false"}
+        aria-controls="atp-layout-menu"
+        @click=${() => (open ? this.closeLayoutMenu(true) : this.openLayoutMenu())}
+        @keydown=${(e: KeyboardEvent) => {
+          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            e.preventDefault();
+            this.openLayoutMenu(e.key === "ArrowDown" ? "first" : "last");
+          }
+        }}
+      >
+        <ha-icon icon="mdi:view-dashboard-outline"></ha-icon>
+      </button>
+      ${open
+        ? html`<div class="layout-menu" role="menu" id="atp-layout-menu" aria-label=${t("layout_menu")} @keydown=${this.onMenuKey}>
+            <div class="menu-title" aria-hidden="true">${t("layout_menu")}</div>
+            ${LAYOUTS.map(
+              (id) => html`<button
+                class="menu-item ${current === id ? "on" : ""}"
+                role="menuitemradio"
+                aria-checked=${current === id ? "true" : "false"}
+                tabindex="-1"
+                @click=${() => this.pickLayout(id)}
+              >
+                <ha-icon class="mi-icon" icon=${AndroidTvPilotCard.LAYOUT_ICONS[id]}></ha-icon>
+                <span class="mi-text">
+                  <span class="mi-name">${this.layoutName(id)}</span>
+                  <span class="mi-help">${t(`layout_${id}_help` as StringKey)}</span>
+                </span>
+                <ha-icon class="mi-check" icon="mdi:check" aria-hidden="true"></ha-icon>
+              </button>`,
+            )}
+            ${this.layoutOverride
+              ? html`<div class="menu-sep" role="separator"></div>
+                  <button class="menu-item reset" role="menuitem" tabindex="-1" @click=${() => this.pickLayout(null)}>
+                    <ha-icon class="mi-icon" icon="mdi:restore"></ha-icon>
+                    <span class="mi-text">
+                      <span class="mi-name">${t("layout_use_dashboard", { layout: this.layoutName(this.configLayout) })}</span>
+                      <span class="mi-help">${t("layout_this_browser")}: ${this.layoutName(this.layoutOverride)}</span>
+                    </span>
+                  </button>`
+              : nothing}
+          </div>`
         : nothing}
     </div>`;
   }
-
   private renderHeader(): TemplateResult {
     const t = this.t;
     const a = this.attrs;
@@ -724,6 +825,7 @@ export class AndroidTvPilotCard extends LitElement {
           ${conn("conn_adb", a.adb_connected)} ${conn("conn_remote", a.remote_connected)}
         </div>
       </div>
+      ${this.renderLayoutButton()}
       <button
         class="power ${power} ${this.failed ? "failed" : ""} ${this.waking ? "waking" : ""}"
         aria-label=${powerLabel}
@@ -1213,17 +1315,16 @@ export class AndroidTvPilotCard extends LitElement {
   }
 
   // ---- layouts --------------------------------------------------------------------------
-  // PROTOTYPE (2026-11-23): three layouts built from the same render helpers. When one is picked,
-  // keep its function, delete the other two and the switch.
+  // Three layouts built from the same render helpers: remote first, apps first, wide.
 
-  private layoutA(): TemplateResult {
+  private remoteLayout(): TemplateResult {
     return html`<div class="body ${this.locked ? "locked" : ""}">
         ${this.renderNav()} ${this.renderNavKeys()} ${this.renderVolume()} ${this.renderTransport()} ${this.renderApps("rail")}
       </div>
       ${this.renderSheet()}`;
   }
 
-  private layoutB(): TemplateResult {
+  private appsLayout(): TemplateResult {
     return html`<div class="body ${this.locked ? "locked" : ""}">
       ${this.renderApps("grid")} ${this.renderInApp()}
       <div class="split">${this.renderNav(true)} ${this.renderNavKeys("stack")}</div>
@@ -1236,7 +1337,7 @@ export class AndroidTvPilotCard extends LitElement {
     </div>`;
   }
 
-  private layoutC(): TemplateResult {
+  private wideLayout(): TemplateResult {
     return html`<div class="body cols ${this.locked ? "locked" : ""}">
       <div class="col col-apps">${this.renderApps("grid")} ${this.renderScreenshot()}</div>
       <div class="col col-pad">${this.renderNav()} ${this.renderNavKeys()} ${this.renderVolume()} ${this.renderTransport()}</div>
@@ -1261,8 +1362,8 @@ export class AndroidTvPilotCard extends LitElement {
     const layout = this.layout;
     return html`<ha-card>
       <div class="wrap layout-${layout} ${this.sheetOpen ? "sheet-open" : ""}" lang=${this.uiLang}>
-        ${this.renderProtoSwitch()} ${this.renderHeader()} ${this.renderStatus()}
-        ${layout === "b" ? this.layoutB() : layout === "c" ? this.layoutC() : this.layoutA()}
+        ${this.renderHeader()} ${this.renderStatus()}
+        ${layout === "apps" ? this.appsLayout() : layout === "wide" ? this.wideLayout() : this.remoteLayout()}
         ${this.renderToasts()}
       </div>
     </ha-card>`;

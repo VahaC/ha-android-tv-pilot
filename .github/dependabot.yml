@@ -9,8 +9,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    # adb-shell and androidtvremote2 are pinned in manifest.json to the versions Home
-    # Assistant core uses; bump them together with core, not on their own.
+    # adb-shell and androidtvremote2: the test pins follow the versions Home Assistant core
+    # pins (manifest.json only sets minimums); bump them together with core.
     ignore:
       - dependency-name: adb-shell
       - dependency-name: androidtvremote2
