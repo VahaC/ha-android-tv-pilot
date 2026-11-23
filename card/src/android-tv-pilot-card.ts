@@ -5,7 +5,7 @@ import { translator } from "./i18n";
 import type { CardConfig, Hass } from "./types";
 
 export const CARD_TAG = "android-tv-pilot-card";
-export const CARD_VERSION = "0.1.2";
+export const CARD_VERSION = "0.1.3";
 // The card compares this with the integration's `integration_version` attribute.
 setCardVersion(CARD_VERSION);
 
