@@ -12,14 +12,14 @@
     "screenshots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
-    "lit": "3.3.1"
+    "lit": "3.3.3"
   },
   "devDependencies": {
     "@mdi/js": "7.4.47",
-    "@types/node": "22.10.2",
-    "esbuild": "0.21.5",
-    "typescript": "5.6.3",
-    "vite": "5.4.21",
-    "vitest": "2.1.9"
+    "@types/node": "26.6.6",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.1"
   }
 }
