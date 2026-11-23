@@ -9,6 +9,9 @@ import {
   normalizeLayout,
   parseStoredLayout,
   tidyConfig,
+  compareVersions,
+  versionNotice,
+  versionNoticeKey,
   fillTemplate,
   initials,
   matchScore,
@@ -227,6 +230,34 @@ describe("theme accent", () => {
 
   it("falls back to CSS when the primary is unknown", () => {
     expect(pickOnAccent(null, WHITE)).toBeNull();
+  });
+});
+
+describe("version notice", () => {
+  it("compares semantic versions", () => {
+    expect(compareVersions("0.1.1", "0.1.2")).toBe(-1);
+    expect(compareVersions("0.2.0", "0.1.9")).toBe(1);
+    expect(compareVersions("1.0.0", "v1.0.0")).toBe(0);
+    expect(compareVersions("0.10.0", "0.9.0")).toBe(1);
+    expect(compareVersions("1.0.0-beta.1", "1.0.0")).toBe(-1);
+    expect(compareVersions("1.0.0+build.5", "1.0.0")).toBe(0);
+    expect(compareVersions("0.1", "0.1.0")).toBeNull();
+    expect(compareVersions("0.1.0", undefined)).toBeNull();
+    expect(compareVersions("0.1.0", 12)).toBeNull();
+  });
+
+  it("asks for a reload when the integration is newer, a restart when the card is newer", () => {
+    expect(versionNotice("0.1.1", "0.1.2")).toBe("reload");
+    expect(versionNotice("0.1.2", "0.1.1")).toBe("restart");
+    expect(versionNotice("0.1.2", "0.1.2")).toBeNull();
+    expect(versionNotice("0.1.2", null)).toBeNull();
+    expect(versionNotice("0.1.2", "dev")).toBeNull();
+  });
+
+  it("keys the dismissed state by the version pair", () => {
+    expect(versionNoticeKey("0.1.1", "0.1.2")).not.toBe(versionNoticeKey("0.1.1", "0.1.3"));
+    expect(versionNoticeKey("0.1.1", "0.1.2")).not.toBe(versionNoticeKey("0.1.2", "0.1.1"));
+    expect(versionNoticeKey("0.1.1", "0.1.2")).toBe(versionNoticeKey("0.1.1", "0.1.2"));
   });
 });
 

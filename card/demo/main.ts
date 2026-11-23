@@ -3,12 +3,13 @@ import "./ha-stubs";
 import type { CardConfig, Hass, HassEntity, TvApp, TvAttributes } from "../src/types";
 
 // ?bundle loads the minified build output instead of the TypeScript sources.
+let cardModule: { CARD_VERSION?: string } = {};
 const USE_BUNDLE = new URLSearchParams(location.search).has("bundle");
 if (USE_BUNDLE) {
   // @ts-ignore the build output has no type declarations
-  await import("../../custom_components/android_tv_pilot/frontend/android-tv-pilot-card.js");
+  cardModule = await import("../../custom_components/android_tv_pilot/frontend/android-tv-pilot-card.js");
 } else {
-  await import("../src/android-tv-pilot-card");
+  cardModule = await import("../src/android-tv-pilot-card");
 }
 
 const TV = "media_player.living_room_tv";
@@ -296,9 +297,19 @@ async function callService(domain: string, service: string, data: Record<string,
   publish();
 }
 
+/** integration_version relative to the loaded card: same, newer (stale tab), older (restart), missing. */
+function integrationVersion(mode: string): string | undefined {
+  const [maj, min, pat] = (cardModule.CARD_VERSION ?? "0.0.0").split(".").map(Number);
+  if (mode === "newer") return `${maj}.${min}.${pat + 1}`;
+  if (mode === "older") return pat > 0 ? `${maj}.${min}.${pat - 1}` : `${maj}.${Math.max(0, min - 1)}.9`;
+  if (mode === "missing") return undefined;
+  return cardModule.CARD_VERSION;
+}
+
 function publish(): void {
   tv.volume_entity = $<HTMLInputElement>("volent").checked ? SOUNDBAR : null;
   tv.has_wake_button = $<HTMLInputElement>("wakebtn").checked;
+  tv.integration_version = integrationVersion($<HTMLSelectElement>("intver").value);
   const { state, ...attrs } = tv;
   const hass: Hass = {
     states: {
@@ -376,7 +387,7 @@ $("lang").addEventListener("click", () => {
   $("lang").textContent = lang === "en" ? "Українська" : "English";
   publish();
 });
-for (const id of ["unreachable", "wakebtn", "adb", "remote", "volent", "appsmode"]) {
+for (const id of ["unreachable", "wakebtn", "adb", "remote", "volent", "appsmode", "intver"]) {
   $(id).addEventListener("change", () => {
     if (id === "adb" || id === "remote") {
       if (tv.power_state === "on") {
@@ -409,6 +420,7 @@ if (params.has("switch")) setChecked("layoutswitch", params.get("switch") === "1
 if (params.has("shot")) setChecked("shot", params.get("shot") === "1");
 if (params.get("theme") === "dark") $("theme").click();
 if (params.get("lang") === "uk") $("lang").click();
+if (params.get("intver")) $<HTMLSelectElement>("intver").value = params.get("intver")!;
 if (params.get("chrome") === "0") document.body.classList.add("bare");
 if (params.get("primary")) {
   $<HTMLSelectElement>("primary").value = params.get("primary")!;

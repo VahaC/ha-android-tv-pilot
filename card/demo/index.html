@@ -182,6 +182,15 @@
           <div class="row" style="flex-direction: column; align-items: flex-start">
             <label><input type="checkbox" id="unreachable" /> Commands fail with tv_unreachable</label>
             <label><input type="checkbox" id="slowadb" /> Slow ADB (800 ms per key)</label>
+            <label
+              >integration_version
+              <select id="intver">
+                <option value="same">same as the card</option>
+                <option value="newer">newer (stale browser tab)</option>
+                <option value="older">older (HA not restarted)</option>
+                <option value="missing">missing</option>
+              </select></label
+            >
             <label><input type="checkbox" id="wakebtn" checked /> has_wake_button</label>
             <label><input type="checkbox" id="failnext" /> Next wake fails (10 s timeout)</label>
             <label><input type="checkbox" id="adb" checked /> adb_connected</label>

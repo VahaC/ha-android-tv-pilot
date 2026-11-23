@@ -29,6 +29,21 @@ _LOGGER = logging.getLogger(__name__)
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
 _REGISTERED = f"{DOMAIN}_frontend_registered"
+_VERSION = f"{DOMAIN}_integration_version"
+
+
+async def async_integration_version(hass: HomeAssistant) -> str:
+    """Version of the integration code that is running.
+
+    Read once from the loader's Integration object (the manifest as loaded at startup),
+    never from disk again: after an update that is not yet active (no restart), this
+    still reports the running version. Used for the resource URL ``?v=`` and the
+    ``integration_version`` attribute, so both always agree.
+    """
+    if (version := hass.data.get(_VERSION)) is None:
+        integration = await async_get_integration(hass, DOMAIN)
+        version = hass.data[_VERSION] = str(integration.version or "0")
+    return version
 
 
 async def async_register_frontend(hass: HomeAssistant) -> None:
@@ -37,8 +52,7 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
         return
     hass.data[_REGISTERED] = True
     try:
-        integration = await async_get_integration(hass, DOMAIN)
-        version = str(integration.version or "0")
+        version = await async_integration_version(hass)
         card_exists = await hass.async_add_executor_job((FRONTEND_DIR / CARD_FILENAME).is_file)
         if not card_exists:
             _LOGGER.warning(

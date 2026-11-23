@@ -1,11 +1,13 @@
 // Entry point: registers the card, its editor and the card-picker entry.
-import { AndroidTvPilotCard } from "./card";
+import { AndroidTvPilotCard, setCardVersion } from "./card";
 import "./editor";
 import { translator } from "./i18n";
 import type { CardConfig, Hass } from "./types";
 
 export const CARD_TAG = "android-tv-pilot-card";
-export const CARD_VERSION = "0.1.1";
+export const CARD_VERSION = "0.1.2";
+// The card compares this with the integration's `integration_version` attribute.
+setCardVersion(CARD_VERSION);
 
 class RegisteredCard extends AndroidTvPilotCard {
   static getConfigElement(): HTMLElement {

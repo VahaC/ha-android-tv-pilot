@@ -24,7 +24,7 @@ from .const import (
     REMOTE_CERT_FILENAME,
     REMOTE_KEY_FILENAME,
 )
-from .frontend_registration import async_register_frontend
+from .frontend_registration import async_integration_version, async_register_frontend
 from .hub import AndroidTVPilotHub
 from .remote_client import RemoteClient, ensure_remote_cert
 from .services import async_setup_services
@@ -91,6 +91,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: AndroidTVPilotConfigEntr
         )
 
     hub = AndroidTVPilotHub(hass, entry, adb, remote, known)
+    hub.integration_version = await async_integration_version(hass)
     entry.runtime_data = hub
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

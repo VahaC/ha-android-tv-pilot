@@ -121,6 +121,7 @@ class AndroidTVPilotHub:
         self.known_apps = known_apps
         self.state = TvState()
         self.started_options: dict[str, Any] = dict(entry.options)
+        self.integration_version: str | None = None
         self.apps: list[AppEntry] = []
         self._apps_raw: AppsResult | None = None
         self._listeners: list[Callable[[], None]] = []

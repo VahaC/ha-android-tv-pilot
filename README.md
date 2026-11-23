@@ -238,6 +238,10 @@ The websocket API used by the card is documented in [docs/api.md](docs/api.md).
   to type other characters.
 - **State is slow to update**: without the remote protocol, state comes from ADB polling (every
   5 s by default; change it in the options).
+- **Card looks outdated or blank after an update**: restart Home Assistant, then reload the
+  browser tab with a hard refresh (Ctrl+Shift+R / Cmd+Shift+R; in the companion app: Settings →
+  Companion app → Debugging → Reset frontend cache). The card shows a hint when its version and
+  the running integration's version differ.
 - Debug logs:
 
   ```yaml

@@ -7,6 +7,10 @@ const en = {
   entity_missing: "Entity {entity} not found. Check the card configuration.",
   entity_not_pilot: "{entity} is not an Android TV Pilot media player.",
   render_error: "The card could not be drawn. See the browser console for details.",
+  version_reload: "A newer version of this card is installed. Reload the page.",
+  version_restart: "Restart Home Assistant to finish the update.",
+  version_reload_button: "Reload",
+  version_dismiss: "Hide this notice",
 
   power_on: "Turn on",
   power_off: "Turn off",
@@ -139,6 +143,10 @@ const uk: Table = {
   entity_missing: "Сутність {entity} не знайдено. Перевірте налаштування картки.",
   entity_not_pilot: "{entity} не є медіаплеєром Android TV Pilot.",
   render_error: "Не вдалося показати картку. Подробиці в консолі браузера.",
+  version_reload: "Встановлено новішу версію цієї картки. Перезавантажте сторінку.",
+  version_restart: "Перезапустіть Home Assistant, щоб завершити оновлення.",
+  version_reload_button: "Перезавантажити",
+  version_dismiss: "Сховати це повідомлення",
 
   power_on: "Увімкнути",
   power_off: "Вимкнути",

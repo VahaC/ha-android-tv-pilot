@@ -18,6 +18,8 @@ import {
   onColor,
   parseCssColor,
   pickOnAccent,
+  versionNotice,
+  versionNoticeKey,
   volumePercent,
   wakeProgress,
 } from "./logic";
@@ -52,6 +54,28 @@ function readStore(key: string): string | null {
     return window.localStorage.getItem(key);
   } catch {
     return null;
+  }
+}
+
+/** Version of the loaded card bundle, set by the entry module (CARD_VERSION). */
+let cardVersion = "0.0.0";
+export function setCardVersion(version: string): void {
+  cardVersion = version;
+}
+
+function readSession(key: string): string | null {
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeSession(key: string, value: string): void {
+  try {
+    window.sessionStorage.setItem(key, value);
+  } catch {
+    /* storage blocked: the notice comes back after a reload, which is acceptable */
   }
 }
 
@@ -104,6 +128,8 @@ export class AndroidTvPilotCard extends LitElement {
   /** Set by HA's panel view. */
   public isPanel = false;
   @state() private layoutMenuOpen = false;
+  /** Version-notice keys dismissed in this render session (mirrors sessionStorage). */
+  @state() private dismissedNotices = new Set<string>();
   /** Local "waking" shown from the tap on power until the entity next updates (max 10 s). */
   @state() private optimisticWakeAt: number | null = null;
   @state() private toasts: Toast[] = [];
@@ -165,10 +191,17 @@ export class AndroidTvPilotCard extends LitElement {
     return { remote: 12, apps: 10, wide: 8 }[this.cardLayout];
   }
 
-  getGridOptions() {
+  /**
+   * Sections view sizing. A section is 12 grid columns (about 320–500 px wide by default), so the
+   * card fills its section by default; `min_columns: 9` keeps the resize slider from going below
+   * roughly 240–375 px, the narrowest width at which the remote is still usable. The wide layout
+   * asks for "full" (whole section, not resizable narrower); spanning several sections is a
+   * section setting (`column_span`), which a card cannot request.
+   */
+  getGridOptions(): { columns: number | "full"; rows: "auto"; min_columns: number } {
     return this.cardLayout === "wide"
-      ? { columns: "full", rows: "auto", min_columns: 6 }
-      : { columns: 6, rows: "auto", min_columns: 4 };
+      ? { columns: "full", rows: "auto", min_columns: 12 }
+      : { columns: 12, rows: "auto", min_columns: 9 };
   }
 
   // ---- derived state --------------------------------------------------------------------
@@ -947,11 +980,11 @@ export class AndroidTvPilotCard extends LitElement {
     };
     return html`<section class="nav ${compact ? "compact" : ""}" @atp-key=${this.onPadKey}>
       <div class="seg nav-toggle" role="group" aria-label=${t("nav_mode")}>
-        <button class="seg-btn ${this.navMode === "dpad" ? "on" : ""}" aria-pressed=${this.navMode === "dpad" ? "true" : "false"} @click=${() => setMode("dpad")}>
-          <ha-icon icon="mdi:gamepad-circle-outline"></ha-icon>${t("nav_dpad")}
+        <button class="seg-btn ${this.navMode === "dpad" ? "on" : ""}" aria-label=${t("nav_dpad")} aria-pressed=${this.navMode === "dpad" ? "true" : "false"} @click=${() => setMode("dpad")}>
+          <ha-icon icon="mdi:gamepad-circle-outline"></ha-icon><span class="seg-label">${t("nav_dpad")}</span>
         </button>
-        <button class="seg-btn ${this.navMode === "touchpad" ? "on" : ""}" aria-pressed=${this.navMode === "touchpad" ? "true" : "false"} @click=${() => setMode("touchpad")}>
-          <ha-icon icon="mdi:gesture-swipe"></ha-icon>${t("nav_touchpad")}
+        <button class="seg-btn ${this.navMode === "touchpad" ? "on" : ""}" aria-label=${t("nav_touchpad")} aria-pressed=${this.navMode === "touchpad" ? "true" : "false"} @click=${() => setMode("touchpad")}>
+          <ha-icon icon="mdi:gesture-swipe"></ha-icon><span class="seg-label">${t("nav_touchpad")}</span>
         </button>
       </div>
       ${this.navMode === "dpad"
@@ -1269,6 +1302,35 @@ export class AndroidTvPilotCard extends LitElement {
     </div>`;
   }
 
+  /**
+   * Slim notice when the loaded card and the running integration are different versions: a stale
+   * browser tab (reload) or an integration update waiting for a restart. Never in the editor
+   * preview; dismissible for the session per version pair; does not lock any control.
+   */
+  private renderVersionNotice(): TemplateResult | typeof nothing {
+    if (this.preview) return nothing;
+    const integration = this.attrs.integration_version;
+    const kind = versionNotice(cardVersion, integration);
+    if (!kind || typeof integration !== "string") return nothing;
+    const key = versionNoticeKey(cardVersion, integration.trim());
+    if (this.dismissedNotices.has(key) || readSession(key) === "1") return nothing;
+    const t = this.t;
+    const dismiss = () => {
+      writeSession(key, "1");
+      this.dismissedNotices = new Set([...this.dismissedNotices, key]);
+    };
+    return html`<div class="version-notice ${kind}" role="status">
+      <ha-icon icon=${kind === "reload" ? "mdi:update" : "mdi:restart"}></ha-icon>
+      <span class="vn-text">${t(kind === "reload" ? "version_reload" : "version_restart")}</span>
+      ${kind === "reload"
+        ? html`<button class="vn-btn" @click=${() => location.reload()}>${t("version_reload_button")}</button>`
+        : nothing}
+      <button class="vn-x" aria-label=${t("version_dismiss")} title=${t("version_dismiss")} @click=${dismiss}>
+        <ha-icon icon="mdi:close"></ha-icon>
+      </button>
+    </div>`;
+  }
+
   private selectTab(id: SheetTab): void {
     this.haptic("selection");
     this.sheetTab = id;
@@ -1427,7 +1489,7 @@ export class AndroidTvPilotCard extends LitElement {
     const layout = this.cardLayout;
     return html`<ha-card>
       <div class="wrap layout-${layout} ${this.sheetOpen ? "sheet-open" : ""}" lang=${this.uiLang}>
-        ${this.renderHeader()} ${this.renderStatus()}
+        ${this.renderVersionNotice()} ${this.renderHeader()} ${this.renderStatus()}
         ${layout === "apps" ? this.appsLayout() : layout === "wide" ? this.wideLayout() : this.remoteLayout()}
         ${this.renderToasts()}
       </div>

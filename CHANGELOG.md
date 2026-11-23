@@ -5,6 +5,31 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-11-23
+
+### Added
+
+- Integration: the media player has a new `integration_version` attribute (the running
+  integration's version, as used for the card resource `?v=`), so the card can tell a stale
+  browser tab from a pending restart.
+- Tests: release guard that `manifest.json`, `card/package.json`, `CARD_VERSION` and the built
+  bundle carry the same version; tests for the Lovelace resource update `?v=<old>` -> `?v=<new>`.
+- README: troubleshooting entry for an outdated or blank card after an update.
+- Card: a slim notice when the loaded card and the running integration are different versions:
+  "A newer version of this card is installed. Reload the page." with a Reload button, or
+  "Restart Home Assistant to finish the update." It can be hidden for the browser session (until
+  the next version pair), never shows in the card editor preview and does not block the controls.
+
+### Fixed
+
+- Card: in a sections view the card now fills its whole section by default instead of half of
+  it, and cannot be resized narrower than about 9 of 12 columns; the Wide layout takes the full
+  section.
+- Card: narrow cards (down to about 195 px) no longer squeeze: the off / asleep / failed banner
+  puts its button on its own full-width row, the TV name wraps instead of being cut, the
+  navigation keys use two rows, the D-pad / touchpad switch shows icons only, and the media keys
+  and volume row fit without overflowing.
+
 ## [0.1.1] - 2026-11-23
 
 ### Fixed

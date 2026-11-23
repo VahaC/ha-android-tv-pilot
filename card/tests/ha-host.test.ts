@@ -110,6 +110,68 @@ describe("card element driven like Home Assistant's hui-card", () => {
     expect(el.getGridOptions().columns).toBe("full");
   });
 
+  it("fills its section by default and cannot be sized below a usable width", () => {
+    const expected: Record<string, unknown> = {
+      remote: { columns: 12, rows: "auto", min_columns: 9 },
+      apps: { columns: 12, rows: "auto", min_columns: 9 },
+      wide: { columns: "full", rows: "auto", min_columns: 12 },
+    };
+    for (const layout of ["remote", "apps", "wide"]) {
+      const el = create();
+      el.setConfig({ type: "custom:android-tv-pilot-card", entity: ENTITY, layout });
+      expect(el.getGridOptions(), layout).toEqual(expected[layout]);
+    }
+    expect(create().getGridOptions()).toEqual(expected.remote); // before setConfig
+  });
+
+  it("shows the version notice only outside the editor preview, and hides it once dismissed", async () => {
+    sessionStorage.clear();
+    const mount = async (version: string | undefined, preview = false) => {
+      const el = create();
+      el.setConfig({ type: "custom:android-tv-pilot-card", entity: ENTITY });
+      const hass = userHass();
+      if (version) hass.states[ENTITY].attributes.integration_version = version;
+      el.hass = hass;
+      el.preview = preview;
+      document.body.appendChild(el);
+      await el.updateComplete;
+      return el;
+    };
+    const { CARD_VERSION } = await import("../src/android-tv-pilot-card");
+    const [maj, min, pat] = CARD_VERSION.split(".").map(Number);
+    const newer = `${maj}.${min}.${pat + 1}`;
+
+    let el = await mount(newer);
+    let notice = el.shadowRoot!.querySelector(".version-notice");
+    expect(notice?.getAttribute("role")).toBe("status");
+    expect(notice?.classList.contains("reload")).toBe(true);
+    expect(notice?.querySelector(".vn-btn")).not.toBeNull();
+    // Controls are not locked by the notice.
+    expect(el.shadowRoot!.querySelector(".body.locked")).toBeNull();
+    (notice!.querySelector(".vn-x") as HTMLElement).click();
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector(".version-notice")).toBeNull();
+    el.remove();
+
+    el = await mount(newer); // same pair: stays dismissed in this session
+    expect(el.shadowRoot!.querySelector(".version-notice")).toBeNull();
+    el.remove();
+
+    el = await mount(`${maj}.${min}.${pat + 2}`); // a later update shows it again
+    expect(el.shadowRoot!.querySelector(".version-notice.reload")).not.toBeNull();
+    el.remove();
+
+    el = await mount(newer, true); // never in the editor preview
+    expect(el.shadowRoot!.querySelector(".version-notice")).toBeNull();
+    el.remove();
+
+    for (const v of [CARD_VERSION, undefined, "garbage"]) {
+      el = await mount(v);
+      expect(el.shadowRoot!.querySelector(".version-notice"), String(v)).toBeNull();
+      el.remove();
+    }
+  });
+
   it("keeps HA's view layout separate from the card's own layout", () => {
     const el = create();
     el.setConfig({ type: "custom:android-tv-pilot-card", entity: ENTITY, layout: "apps" });

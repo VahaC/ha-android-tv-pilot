@@ -284,6 +284,46 @@ export function tidyConfig(input: Record<string, unknown>): Record<string, unkno
   return out;
 }
 
+/**
+ * Compares two versions "MAJOR.MINOR.PATCH" (optional leading "v", optional "-pre" / "+build";
+ * a pre-release sorts before its release). Returns -1, 0 or 1, or null if either is unparsable.
+ */
+export function compareVersions(a: unknown, b: unknown): -1 | 0 | 1 | null {
+  const parse = (v: unknown) => {
+    if (typeof v !== "string") return null;
+    const m = v.trim().match(/^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/);
+    return m ? { nums: [Number(m[1]), Number(m[2]), Number(m[3])], pre: m[4] ?? null } : null;
+  };
+  const pa = parse(a);
+  const pb = parse(b);
+  if (!pa || !pb) return null;
+  for (let i = 0; i < 3; i++) {
+    if (pa.nums[i] !== pb.nums[i]) return pa.nums[i] < pb.nums[i] ? -1 : 1;
+  }
+  if (pa.pre === pb.pre) return 0;
+  if (pa.pre === null) return 1;
+  if (pb.pre === null) return -1;
+  return pa.pre < pb.pre ? -1 : 1;
+}
+
+export type VersionNotice = "reload" | "restart";
+
+/**
+ * What to tell the user when the loaded card and the running integration differ:
+ * integration newer -> the browser still runs an old card ("reload");
+ * card newer -> HA still runs the old integration ("restart"). Null when equal or unknown.
+ */
+export function versionNotice(cardVersion: string, integrationVersion: unknown): VersionNotice | null {
+  const cmp = compareVersions(cardVersion, integrationVersion);
+  if (cmp === null || cmp === 0) return null;
+  return cmp < 0 ? "reload" : "restart";
+}
+
+/** sessionStorage key for a dismissed notice; tied to the version pair so a later update shows it again. */
+export function versionNoticeKey(cardVersion: string, integrationVersion: string): string {
+  return `android-tv-pilot:version-notice:${cardVersion}|${integrationVersion}`;
+}
+
 /** True when every character can be typed over ADB `input text` (printable ASCII). */
 export function isAdbTypable(text: string): boolean {
   return /^[\x20-\x7e]*$/.test(text);

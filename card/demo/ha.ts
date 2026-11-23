@@ -124,7 +124,21 @@ function otherCard(text: string): HTMLElement {
   return c;
 }
 
+/** Applies the off state (his case before waking) or the on state from his instance. */
+function applyTvState(): void {
+  const s = hass.states[ENTITY];
+  const off = $<HTMLSelectElement>("tvstate").value === "off";
+  s.state = off ? "off" : "idle";
+  Object.assign(s.attributes, off
+    ? { power_state: "off", adb_connected: false, remote_connected: false, app_id: null, app_name: null, app_activity: null }
+    : { power_state: "on", adb_connected: true, remote_connected: true, app_id: "com.google.android.tvlauncher", app_name: "Home", app_activity: "com.google.android.tvlauncher.MainActivity" });
+  document.body.classList.toggle("light", $<HTMLSelectElement>("theme").value === "light");
+  hass.themes = { darkMode: $<HTMLSelectElement>("theme").value !== "light" };
+  document.documentElement.style.setProperty("--section-w", `${$<HTMLSelectElement>("secw").value}px`);
+}
+
 function mountAll(): void {
+  applyTvState();
   const layout = $<HTMLSelectElement>("layout").value;
   for (const id of ["editor-preview", "masonry-col", "section", "panel"]) $(id).replaceChildren();
 
@@ -137,9 +151,15 @@ function mountAll(): void {
   const section = $("section");
   const cell = (child: HTMLElement, columns: number | "full", rows: number | "auto") => {
     const wrap = document.createElement("div");
+    // Same mapping as hui-grid-section: numeric columns -> --column-size, "full" -> full-width,
+    // numeric rows -> --row-size + fit-rows, "auto" rows -> natural height.
     wrap.className = "card";
-    wrap.style.gridColumn = `span ${columns === "full" ? 12 : Math.min(12, columns)}`;
-    if (rows !== "auto") wrap.style.gridRow = `span ${rows}`;
+    if (columns === "full") wrap.classList.add("full-width");
+    else wrap.style.setProperty("--column-size", String(columns));
+    if (rows !== "auto") {
+      wrap.classList.add("fit-rows");
+      wrap.style.setProperty("--row-size", String(rows));
+    }
     wrap.append(child);
     return wrap;
   };
@@ -161,14 +181,21 @@ function mountAll(): void {
       const r = el.getBoundingClientRect();
       const where = el.closest("#editor-preview, #masonry-col, #section, #panel")?.id;
       const wrap = el.shadowRoot?.querySelector(".wrap");
-      log(`${where}: ${Math.round(r.width)}x${Math.round(r.height)} px, ${wrap ? wrap.className.trim() : "NO CONTENT"}`, !wrap || r.height < 50);
+      // Anything inside the card wider than the card itself = overflow / clipping.
+      const inner = el.shadowRoot?.querySelector<HTMLElement>(".wrap");
+      const overflow = inner ? inner.scrollWidth - inner.clientWidth : 0;
+      log(
+        `${where}: ${Math.round(r.width)}x${Math.round(r.height)} px, ${wrap ? wrap.className.trim() : "NO CONTENT"}${overflow > 0 ? `, OVERFLOW ${overflow}px` : ""}`,
+        !wrap || r.height < 50 || overflow > 0,
+      );
     }
   }, 800);
 }
 
-$("layout").addEventListener("change", mountAll);
+for (const id of ["layout", "secw", "tvstate", "theme"]) $(id).addEventListener("change", mountAll);
 $("bug").addEventListener("change", mountAll);
 $("remount").addEventListener("click", mountAll);
 if (params.get("layout")) $<HTMLSelectElement>("layout").value = params.get("layout")!;
 if (params.has("bug")) $<HTMLInputElement>("bug").checked = true;
+for (const id of ["secw", "tvstate", "theme"]) if (params.get(id)) $<HTMLSelectElement>(id).value = params.get(id)!;
 mountAll();

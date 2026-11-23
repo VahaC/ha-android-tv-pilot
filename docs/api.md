@@ -49,6 +49,7 @@ The entity is never `unavailable` because the TV sleeps: `turn_on` must stay cal
 | `remote_connected` | bool                                        | Remote protocol (androidtvremote2)                       |
 | `volume_entity`    | entity_id or `null`                         | External volume entity                                   |
 | `has_wake_button`  | bool                                        | A wake entity is configured (any supported domain; name kept for compatibility) |
+| `integration_version` | string                                   | Version of the integration code that is running (from the loader at startup, same value as the card resource `?v=`) |
 
 Example:
 
@@ -69,7 +70,23 @@ attributes:
   remote_connected: true
   volume_entity: null
   has_wake_button: true
+  integration_version: "0.1.1"
 ```
+
+### Version mismatch
+
+After an update, the browser can keep running the old card until the tab is reloaded, and the new
+Python code only runs after Home Assistant restarts. The card compares `integration_version` with
+its own built-in version:
+
+- card older than `integration_version`: the tab still has the old card, so the card asks to
+  reload the page;
+- card newer than `integration_version`: the new files are installed but Home Assistant has not
+  restarted yet, so the card asks to restart Home Assistant to finish the update.
+
+`integration_version` is read once from the loaded manifest and is never re-read from disk, so it
+always describes the running code. On startup the integration also moves its Lovelace resource
+from `...?v=<old>` to `...?v=<integration_version>`.
 
 ### Wake entity
 

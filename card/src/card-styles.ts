@@ -10,7 +10,11 @@ export const cardStyles = [
       /* Fills a panel view; resolves to auto in masonry columns and section cells. */
       height: 100%;
     }
+    /* ha-card is the size container (inline-size only, never size: no definite height needed),
+       so rules can also adjust .wrap itself on narrow cards. */
     ha-card {
+      container-type: inline-size;
+      container-name: atp;
       overflow: hidden;
       position: relative;
       height: 100%;
@@ -20,8 +24,6 @@ export const cardStyles = [
       transition: background 400ms;
     }
     .wrap {
-      container-type: inline-size;
-      container-name: atp;
       position: relative;
       padding: 14px;
       display: flex;
@@ -170,6 +172,58 @@ export const cardStyles = [
       margin: 6px 4px;
       background: var(--atp-line);
     }
+    /* ---- version notice (stale tab / pending restart) ---------------------------------- */
+    .version-notice {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 4px 4px 10px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.3;
+      background: color-mix(in srgb, var(--atp-warning) 12%, var(--atp-surface));
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--atp-warning) 45%, transparent);
+      --mdc-icon-size: 20px;
+    }
+    .version-notice > ha-icon {
+      flex: none;
+      color: var(--atp-warning);
+    }
+    .vn-text {
+      flex: 1;
+      min-width: 0;
+      padding: 6px 0;
+    }
+    .vn-btn,
+    .vn-x {
+      all: unset;
+      flex: none;
+      min-height: 44px;
+      min-width: 44px;
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .vn-btn {
+      padding: 0 12px;
+      font-weight: 600;
+      color: var(--atp-on-accent-base);
+      background: var(--atp-accent-base);
+    }
+    .vn-x {
+      color: var(--atp-muted);
+      --mdc-icon-size: 18px;
+    }
+    .vn-btn:focus-visible,
+    .vn-x:focus-visible {
+      outline: 2px solid var(--atp-accent-ink);
+      outline-offset: 2px;
+    }
+
     /* ---- segmented control ------------------------------------------------------------- */
     .seg {
       display: flex;
@@ -1322,5 +1376,75 @@ export const cardStyles = [
         width: 28px;
       }
     }
-  `,
+
+    /* ---- narrow cards (half a section, masonry column, small phones) -------------------- */
+    @container atp (max-width: 340px) {
+      .navkeys {
+        grid-template-columns: repeat(3, minmax(44px, 1fr));
+      }
+      .chip-text {
+        max-width: 100%;
+      }
+    }
+    @container atp (max-width: 300px) {
+      .wrap {
+        padding: 10px;
+        gap: 12px;
+      }
+      .wrap.layout-remote {
+        padding-bottom: 74px;
+      }
+      .name {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        font-size: 18px;
+      }
+      .head {
+        gap: 8px;
+        align-items: flex-start;
+      }
+      .sub {
+        gap: 4px 8px;
+      }
+      /* Banner: icon + text on one row, the action as a full-width button below. */
+      .status {
+        flex-wrap: wrap;
+        padding: 10px 12px;
+        gap: 8px 10px;
+      }
+      .status > div {
+        flex: 1 1 0;
+      }
+      .status .key {
+        flex: 1 1 100%;
+      }
+      .nav-toggle .seg-label {
+        display: none;
+      }
+      .volume {
+        gap: 6px;
+      }
+      .level-num {
+        display: none;
+      }
+      .transport {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) auto repeat(2, minmax(0, 1fr));
+        gap: 2px;
+      }
+      .transport .key {
+        min-width: 0;
+        padding: 0;
+      }
+      .transport .key.play {
+        width: 52px;
+        height: 52px;
+      }
+      .version-notice {
+        flex-wrap: wrap;
+      }
+      .vn-text {
+        flex: 1 1 calc(100% - 80px);
+      }
+    }  `,
 ];

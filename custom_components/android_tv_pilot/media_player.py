@@ -22,6 +22,7 @@ from .const import (
     ATTR_APP_NAME,
     ATTR_ENTRY_ID,
     ATTR_HAS_WAKE_BUTTON,
+    ATTR_INTEGRATION_VERSION,
     ATTR_POWER_STATE,
     ATTR_REMOTE_CONNECTED,
     ATTR_VOLUME_ENTITY,
@@ -159,6 +160,7 @@ class AndroidTVPilotMediaPlayer(AndroidTVPilotEntity, MediaPlayerEntity):
             ATTR_REMOTE_CONNECTED: hub.remote_connected,
             ATTR_VOLUME_ENTITY: hub.volume_entity,
             ATTR_HAS_WAKE_BUTTON: hub.wake_button is not None,
+            ATTR_INTEGRATION_VERSION: hub.integration_version,
         }
 
     # ------------------------------------------------------------ commands

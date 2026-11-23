@@ -57,6 +57,19 @@ App brand colours are only used where they identify the app: the app tiles, the 
 the current-app chip and in the in-app panel header. Connection dots and failure states use the
 theme's `--success-color`, `--error-color` and `--warning-color`.
 
+### Version notice
+
+The card compares its own version with the integration's `integration_version` attribute:
+
+- integration newer than the card: "A newer version of this card is installed. Reload the page."
+  with a **Reload** button (the browser tab still runs the old card);
+- card newer than the integration: "Restart Home Assistant to finish the update." (HA still runs
+  the old integration).
+
+Nothing is shown when the versions match, when the attribute is missing or not a version, or in
+the card editor preview. The notice does not block any control and can be hidden with its close
+button for the rest of the browser session; a later version pair shows it again.
+
 ### Volume
 
 - With a volume entity (from `volume_entity` in the card or in the integration options), the
@@ -104,6 +117,19 @@ card editor (**Layout**) or with `layout:` in YAML.
 ![Wide layout, dark theme](images/card-wide-dark.png)
 
 The screenshots come from the demo harness (`npm run screenshots`, see [Development](#development)).
+
+### Size in a sections view
+
+The card fills its whole section by default (12 of 12 grid columns, height from the content). In
+the card editor's **Layout** tab you can make it narrower, down to 9 columns, roughly the
+narrowest width at which the remote is still comfortable. The Wide layout always takes the full
+section; to spread it over several sections, widen the section itself (section settings).
+
+Narrower cards (a masonry column, a small phone, or a resized card) rearrange themselves rather
+than squeeze: below about 340 px the navigation keys use two rows, and below about 300 px the
+off / asleep / failed banner puts its button on a full-width row, the TV name wraps, the
+D-pad / touchpad switch shows icons only and the paddings shrink. Nothing overflows down to
+about 195 px.
 
 ### Layout button
 
@@ -223,7 +249,8 @@ npm run build      # writes custom_components/android_tv_pilot/frontend/android-
 `setConfig`, `hass`, `layout`, `preview`, `editMode`, then append) inside copies of HA's containers:
 the card editor preview, a masonry column, a sections grid cell next to other cards, and a panel
 view, using the real `ha-card` styles and the attributes of a real TV. A log shows each card's
-rendered size. "Re-create the 0.1.0 bug" shows what happened when the card had a getter-only
+rendered size and any horizontal overflow. Controls set the section width (195, 240, 300, 360,
+500 px), the TV state (off / on) and the theme (light / dark). "Re-create the 0.1.0 bug" shows what happened when the card had a getter-only
 `layout`: hui-card threw, nothing was appended and the preview stayed blank. Add `?src` to use the
 TypeScript sources instead of the bundle.
 
@@ -239,7 +266,8 @@ npm run screenshots
 
 The demo also takes URL parameters for scripted setups: `layout=remote|apps|wide`, `switch=0|1`
 (layout button), `shot=0|1`, `theme=light|dark`, `lang=en|uk`, `state=off|waking|on|asleep|failed`,
-`app=<package>`, `width=<card px>`, `primary=<css colour>` (try another theme primary),
+`app=<package>`, `width=<card px>`, `intver=same|newer|older|missing` (integration_version),
+`primary=<css colour>` (try another theme primary),
 `chrome=0` (card only, no control panel) and `bundle`. The demo uses the stock HA primary `#009ac7`
 and has a "Primary colour" picker with a few others (orange, green, purple, yellow, dark indigo).
 

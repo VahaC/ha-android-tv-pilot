@@ -59,6 +59,7 @@ ATTR_ADB_CONNECTED: Final = "adb_connected"
 ATTR_REMOTE_CONNECTED: Final = "remote_connected"
 ATTR_VOLUME_ENTITY: Final = "volume_entity"
 ATTR_HAS_WAKE_BUTTON: Final = "has_wake_button"
+ATTR_INTEGRATION_VERSION: Final = "integration_version"
 
 POWER_OFF: Final = "off"
 POWER_WAKING: Final = "waking"

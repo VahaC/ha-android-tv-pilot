@@ -45,6 +45,8 @@ export interface TvAttributes {
   remote_connected?: boolean;
   volume_entity?: string | null;
   has_wake_button?: boolean;
+  /** Version of the running integration (compared with the card's own version). */
+  integration_version?: string;
   [key: string]: unknown;
 }
 
