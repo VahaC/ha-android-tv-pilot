@@ -219,6 +219,14 @@ npm test           # vitest: profile matching, templating, wake progress, swipe 
 npm run build      # writes custom_components/android_tv_pilot/frontend/android-tv-pilot-card.js
 ```
 
+`http://localhost:5179/ha.html` mounts the built card the way Home Assistant does (hui-card's order:
+`setConfig`, `hass`, `layout`, `preview`, `editMode`, then append) inside copies of HA's containers:
+the card editor preview, a masonry column, a sections grid cell next to other cards, and a panel
+view, using the real `ha-card` styles and the attributes of a real TV. A log shows each card's
+rendered size. "Re-create the 0.1.0 bug" shows what happened when the card had a getter-only
+`layout`: hui-card threw, nothing was appended and the preview stayed blank. Add `?src` to use the
+TypeScript sources instead of the bundle.
+
 Screenshots in `docs/images` are regenerated from the demo with Playwright, which is deliberately not
 a dependency (CI runs `npm ci`):
 

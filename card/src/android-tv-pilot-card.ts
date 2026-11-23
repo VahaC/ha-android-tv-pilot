@@ -5,7 +5,7 @@ import { translator } from "./i18n";
 import type { CardConfig, Hass } from "./types";
 
 export const CARD_TAG = "android-tv-pilot-card";
-export const CARD_VERSION = "0.1.0";
+export const CARD_VERSION = "0.1.1";
 
 class RegisteredCard extends AndroidTvPilotCard {
   static getConfigElement(): HTMLElement {

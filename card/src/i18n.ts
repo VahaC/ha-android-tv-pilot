@@ -6,6 +6,7 @@ const en = {
   card_description: "A tactile remote for Android TV: power with BLE wake, D-pad or touchpad, apps and in-app controls.",
   entity_missing: "Entity {entity} not found. Check the card configuration.",
   entity_not_pilot: "{entity} is not an Android TV Pilot media player.",
+  render_error: "The card could not be drawn. See the browser console for details.",
 
   power_on: "Turn on",
   power_off: "Turn off",
@@ -137,6 +138,7 @@ const uk: Table = {
   card_description: "Тактильний пульт для Android TV: увімкнення через BLE, D-pad або тачпад, застосунки й керування всередині них.",
   entity_missing: "Сутність {entity} не знайдено. Перевірте налаштування картки.",
   entity_not_pilot: "{entity} не є медіаплеєром Android TV Pilot.",
+  render_error: "Не вдалося показати картку. Подробиці в консолі браузера.",
 
   power_on: "Увімкнути",
   power_off: "Вимкнути",

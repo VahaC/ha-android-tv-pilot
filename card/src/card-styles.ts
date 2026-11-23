@@ -7,6 +7,8 @@ export const cardStyles = [
   css`
     :host {
       display: block;
+      /* Fills a panel view; resolves to auto in masonry columns and section cells. */
+      height: 100%;
     }
     ha-card {
       overflow: hidden;
@@ -263,6 +265,11 @@ export const cardStyles = [
       --mdc-icon-size: 14px;
       font-size: 9px;
       font-weight: 700;
+    }
+    .chip-art .initials,
+    .mini-art .initials {
+      font-size: 9px;
+      letter-spacing: 0;
     }
     .chip-art img,
     .mini-art img {

@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-11-23
+
+### Fixed
+
+- Card: blank editor preview and an empty section on sections dashboards. Home Assistant assigns
+  a `layout` property to every card, which clashed with a read-only property of the card.
+- Card: two-letter initials no longer overflow the small app icons.
+
+### Changed
+
+- Card: a rendering error now shows a visible message inside the card instead of an empty space.
+- Card: fills the available height in panel views.
+
 ## [0.1.0] - 2026-11-23
 
 ### Added

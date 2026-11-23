@@ -90,6 +90,19 @@ export class AndroidTvPilotCard extends LitElement {
   @state() private layoutOverride: LayoutId | null = null;
   /** Dashboard layout from the config, normalised (a/b/c aliases mapped). */
   @state() private configLayout: LayoutId = "remote";
+
+  // Properties Home Assistant assigns to every card element (hui-card._loadElement, views). They
+  // must stay plain writable fields: HA's `layout` is the VIEW layout ("masonry" | "grid" |
+  // "panel"), unrelated to this card's remote/apps/wide layout (see cardLayout). A getter-only
+  // `layout` here made hui-card throw, which blanked the editor preview and the whole section.
+  /** View layout set by HA. Informational only. */
+  public layout?: string;
+  /** Set by HA when the card is shown in the card editor preview. */
+  public preview = false;
+  /** Set by HA while the dashboard is in edit mode. */
+  public editMode = false;
+  /** Set by HA's panel view. */
+  public isPanel = false;
   @state() private layoutMenuOpen = false;
   /** Local "waking" shown from the tap on power until the entity next updates (max 10 s). */
   @state() private optimisticWakeAt: number | null = null;
@@ -149,11 +162,11 @@ export class AndroidTvPilotCard extends LitElement {
   }
 
   getCardSize(): number {
-    return { remote: 12, apps: 10, wide: 8 }[this.layout];
+    return { remote: 12, apps: 10, wide: 8 }[this.cardLayout];
   }
 
   getGridOptions() {
-    return this.layout === "wide"
+    return this.cardLayout === "wide"
       ? { columns: "full", rows: "auto", min_columns: 6 }
       : { columns: 6, rows: "auto", min_columns: 4 };
   }
@@ -172,7 +185,7 @@ export class AndroidTvPilotCard extends LitElement {
    * The per-browser choice wins over the dashboard layout only while the layout button is enabled;
    * with the button off (the default) the editor's layout always applies.
    */
-  private get layout(): LayoutId {
+  private get cardLayout(): LayoutId {
     if (this.config?.layout_switch === true && this.layoutOverride) return this.layoutOverride;
     return this.configLayout;
   }
@@ -307,7 +320,7 @@ export class AndroidTvPilotCard extends LitElement {
   private revealRunningApp(): void {
     const rail = this.renderRoot.querySelector<HTMLElement>(".tiles.rail");
     const tile = rail?.querySelector<HTMLElement>(".tile.running")?.parentElement;
-    const key = `${this.layout}:${this.attrs.app_id ?? ""}`;
+    const key = `${this.cardLayout}:${this.attrs.app_id ?? ""}`;
     if (!rail || !tile || key === this.revealedApp) return;
     this.revealedApp = key;
     const left = tile.offsetLeft - rail.offsetLeft;
@@ -602,7 +615,7 @@ export class AndroidTvPilotCard extends LitElement {
     if (!this.config?.show_screenshot || this.power !== "on" || !this.visible) return false;
     if (document.visibilityState !== "visible") return false;
     // In layout A the screenshot lives in the bottom sheet: no signed URLs while it is not shown.
-    if (this.layout === "remote" && !(this.sheetOpen && this.sheetTab === "screen")) return false;
+    if (this.cardLayout === "remote" && !(this.sheetOpen && this.sheetTab === "screen")) return false;
     return true;
   }
 
@@ -758,7 +771,7 @@ export class AndroidTvPilotCard extends LitElement {
   private renderLayoutButton(): TemplateResult | typeof nothing {
     if (this.config.layout_switch !== true) return nothing;
     const t = this.t;
-    const current = this.layout;
+    const current = this.cardLayout;
     const open = this.layoutMenuOpen;
     return html`<div class="layout-wrap">
       <button
@@ -1365,7 +1378,39 @@ export class AndroidTvPilotCard extends LitElement {
     </div>`;
   }
 
+  /**
+   * Never render blank: if building the card throws, show a small error inside ha-card and log the
+   * error, instead of an empty element (or, worse, an empty section).
+   */
   render() {
+    try {
+      return this.renderCard();
+    } catch (err) {
+      console.error("[android-tv-pilot-card] render failed", err);
+      const message = err instanceof Error ? err.message : String(err);
+      return html`<ha-card>
+        <div class="wrap">
+          <div class="status failed render-error" role="alert">
+            <ha-icon icon="mdi:alert-octagon-outline"></ha-icon>
+            <div>
+              <strong>${this.safeT("render_error")}</strong>
+              <p>${message}</p>
+            </div>
+          </div>
+        </div>
+      </ha-card>`;
+    }
+  }
+
+  private safeT(key: StringKey): string {
+    try {
+      return this.t(key);
+    } catch {
+      return translator("en")(key);
+    }
+  }
+
+  private renderCard() {
     if (!this.config || !this.hass) return nothing;
     const t = this.t;
     const entity = this.entity;
@@ -1379,7 +1424,7 @@ export class AndroidTvPilotCard extends LitElement {
         <ha-icon icon="mdi:alert"></ha-icon><div><p>${t("entity_not_pilot", { entity: this.config.entity })}</p></div>
       </div></div></ha-card>`;
     }
-    const layout = this.layout;
+    const layout = this.cardLayout;
     return html`<ha-card>
       <div class="wrap layout-${layout} ${this.sheetOpen ? "sheet-open" : ""}" lang=${this.uiLang}>
         ${this.renderHeader()} ${this.renderStatus()}

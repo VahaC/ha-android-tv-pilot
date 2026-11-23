@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Android TV Pilot card — Home Assistant host simulation</title>
+    <style>
+      /* Stock HA dark theme variables (frontend color.globals.ts). */
+      body {
+        --primary-color: #009ac7;
+        --text-primary-color: #ffffff;
+        --primary-text-color: #e1e1e1;
+        --secondary-text-color: #9b9b9b;
+        --card-background-color: #1c1c1c;
+        --primary-background-color: #111111;
+        --divider-color: rgba(225, 225, 225, 0.12);
+        --error-color: #db4437;
+        --warning-color: #ffa600;
+        --success-color: #43a047;
+        --ha-border-radius-lg: 12px;
+        --ha-border-radius-sm: 4px;
+        margin: 0;
+        padding: 16px;
+        background: var(--primary-background-color);
+        color: var(--primary-text-color);
+        font-family: Roboto, "Segoe UI", system-ui, sans-serif;
+      }
+      h2 {
+        font-size: 14px;
+        margin: 28px 0 8px;
+        color: var(--secondary-text-color);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        font-size: 13px;
+      }
+      .controls select,
+      .controls button {
+        font: inherit;
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--divider-color);
+        background: #222;
+        color: inherit;
+      }
+      #log {
+        font: 11px/1.5 ui-monospace, Consolas, monospace;
+        white-space: pre-wrap;
+        background: #000;
+        border: 1px solid var(--divider-color);
+        border-radius: 8px;
+        padding: 8px;
+        max-height: 160px;
+        overflow: auto;
+        margin-top: 8px;
+      }
+
+      /* ---- hui-dialog-edit-card (frontend src/panels/lovelace/editor/card-editor) ---- */
+      .dialog {
+        border: 1px dashed #444;
+        border-radius: 12px;
+        padding: 8px;
+        max-width: 1100px;
+      }
+      .content {
+        width: 100%;
+        max-width: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      .content hui-card {
+        display: block;
+        padding: 4px;
+        margin: 0 auto;
+        max-width: 390px;
+      }
+      .element-editor {
+        margin-bottom: 8px;
+        padding-inline-start: 4px;
+        padding-inline-end: 8px;
+        color: var(--secondary-text-color);
+        font-size: 13px;
+      }
+      .element-preview {
+        position: relative;
+        height: max-content;
+        background: var(--primary-background-color);
+        padding: 4px;
+        border-radius: var(--ha-border-radius-sm);
+      }
+      hui-card {
+        padding-top: 8px;
+        margin-bottom: 4px;
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      @media (min-width: 1000px) {
+        .content {
+          flex-direction: row;
+          max-height: calc(100vh - 209px);
+        }
+        .content > .element-editor {
+          padding-inline-end: 16px;
+        }
+        .content > .element-editor,
+        .content > .element-preview {
+          flex-basis: 0;
+          flex-grow: 1;
+          flex-shrink: 1;
+          min-width: 0;
+          height: auto;
+        }
+        .content hui-card {
+          padding: 8px 10px;
+          margin: auto 0px;
+          max-width: 500px;
+        }
+      }
+
+      /* ---- masonry view: columns of cards, no explicit height ---- */
+      .masonry {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        max-width: 1100px;
+      }
+      .masonry .column {
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: 500px;
+      }
+      .masonry .column > * {
+        display: block;
+        margin: 4px 4px 8px;
+      }
+
+      /* ---- sections view: 12-column grid section (hui-grid-section) ---- */
+      .section {
+        max-width: 500px;
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        grid-auto-rows: 56px;
+        gap: 8px;
+        padding: 4px;
+        border: 1px dashed #444;
+        border-radius: 12px;
+      }
+      .section > .card {
+        min-width: 0;
+      }
+
+      /* ---- panel view: one card, full width and height ---- */
+      .panel {
+        height: 900px;
+        border: 1px dashed #444;
+        border-radius: 12px;
+      }
+      .panel hui-card {
+        height: 100%;
+        padding: 0;
+      }
+
+      .other {
+        padding: 12px 16px;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <strong>Home Assistant host simulation</strong>
+      <label>Card layout <select id="layout"><option>remote</option><option>apps</option><option>wide</option></select></label>
+      <label><input type="checkbox" id="bug" /> Re-create the 0.1.0 bug (getter-only <code>layout</code>)</label>
+      <button id="remount">Re-mount</button>
+      <span id="src"></span>
+    </div>
+    <div id="log"></div>
+
+    <h2>1. Card editor preview (hui-dialog-edit-card)</h2>
+    <div class="dialog">
+      <div class="content">
+        <div class="element-editor">(editor form)</div>
+        <div class="element-preview" id="editor-preview"></div>
+      </div>
+    </div>
+
+    <h2>2. Masonry view column</h2>
+    <div class="masonry">
+      <div class="column" id="masonry-col"></div>
+      <div class="column"><ha-card class="other">Other card in the next column</ha-card></div>
+    </div>
+
+    <h2>3. Sections view grid cell (with another card in the same section)</h2>
+    <div class="section" id="section"></div>
+
+    <h2>4. Panel view</h2>
+    <div class="panel" id="panel"></div>
+
+    <script type="module" src="./ha.ts"></script>
+  </body>
+</html>
