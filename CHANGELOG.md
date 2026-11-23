@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Card: build dependencies updated (lit 3.3.3, Vite 8.3.8, Vitest 5.1.1, TypeScript 7.0.2,
+  esbuild 0.28.2, happy-dom 21.0.4, @types/node 26.6.6). Build config moved to the Vite 8 option
+  names; the bundle's behaviour and look are unchanged.
+
 ## [0.1.2] - 2026-11-23
 
 ### Added

@@ -181,6 +181,39 @@ describe("card element driven like Home Assistant's hui-card", () => {
     expect(el.getCardSize()).toBe(10); // still the "apps" card layout
   });
 
+  it("re-renders on hass and internal state changes (decorator / class-field semantics)", async () => {
+    // A wrong experimentalDecorators / useDefineForClassFields setup gives a card that renders
+    // once and never updates; this catches that for the toolchain that builds the bundle.
+    const el = create() as CardElement & { hass: Hass };
+    el.setConfig({ type: "custom:android-tv-pilot-card", entity: ENTITY });
+    const hass = userHass();
+    el.hass = hass;
+    document.body.appendChild(el);
+    await el.updateComplete;
+    const root = el.shadowRoot!;
+    expect(root.querySelector(".status")).toBeNull(); // on: no banner
+
+    // External update: a new hass object with the TV off.
+    const off = userHass();
+    off.states[ENTITY] = { ...off.states[ENTITY], state: "off", attributes: { ...off.states[ENTITY].attributes, power_state: "off" } };
+    el.hass = off;
+    await el.updateComplete;
+    expect(root.querySelector(".status.idle")).not.toBeNull();
+    expect(root.querySelector(".state-pill")?.textContent?.trim()).toBe("Off");
+
+    // Back on, then an internal @state change through the UI (D-pad -> touchpad).
+    el.hass = userHass();
+    await el.updateComplete;
+    expect(root.querySelector("atp-dpad")).not.toBeNull();
+    (root.querySelectorAll(".nav-toggle .seg-btn")[1] as HTMLElement).click();
+    await el.updateComplete;
+    expect(root.querySelector("atp-touchpad")).not.toBeNull();
+    expect(root.querySelector("atp-dpad")).toBeNull();
+    (root.querySelectorAll(".nav-toggle .seg-btn")[0] as HTMLElement).click();
+    await el.updateComplete;
+    el.remove();
+  });
+
   it("shows a visible error instead of a blank card when rendering throws", async () => {
     const el = create();
     el.setConfig({ type: "custom:android-tv-pilot-card", entity: ENTITY });
